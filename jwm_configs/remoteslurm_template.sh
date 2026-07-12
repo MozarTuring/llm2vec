@@ -1,6 +1,6 @@
 JWM_SERVER_NAME=
 export JWM_MODULES="Miniforge3 buildenv-gcccuda/12.4.1-gcc13.3.0"
-export JWM_ENVS="/proj/berzelius-aiics-real/users/x_jinma/conda_envs/llm2vec"
+export JWM_CONDAENV="/proj/berzelius-aiics-real/users/x_jinma/conda_envs/llm2vec"
 export JWM_GPU_NUM=
 export JWM_NODES_NUM=
 export JWM_RUN_TIME=
@@ -12,11 +12,14 @@ module --force purge
 module load ${JWM_MODULES}
 
 
-if [ ! -d ${JWM_ENVS} ]; then
+if [ ! -d ${JWM_CONDAENV} ]; then
 
-conda create -p ${JWM_ENVS} python=3.10 -y
+conda create -p ${JWM_CONDAENV} python=3.10 -y
 
 fi
-conda activate ${JWM_ENVS}
+conda activate ${JWM_CONDAENV}
 which python
 echo $PWD
+
+# pip install -e .
+# pip install flash-attn --no-build-isolation
