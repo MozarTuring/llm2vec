@@ -37,9 +37,7 @@ echo $PWD
 
 # pip install -e .
 # pip install torch --force-reinstall --index-url https://download.pytorch.org/whl/cu124
-pip uninstall -y flash-attn 2>/dev/null
 pip install ninja
-pip install flash-attn --no-build-isolation --no-cache-dir --no-binary flash-attn
 
 
 # python experiments/download_model.py \
