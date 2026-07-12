@@ -35,8 +35,7 @@ conda activate ${JWM_CONDAENV}
 which python
 echo $PWD
 
-pip install -e .
-pip install flash-attn --no-build-isolation
+# pip install -e .
 
 if [[ -z "${SBATCH_OUT:-}" ]]; then
 require_env JWM_SLURM_FILE JWM_RUN_TIME JWM_NODES_NUM
