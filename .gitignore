@@ -10,3 +10,4 @@ output/
 *.log
 cluster_scripts/****/zzzjwmresources
 .DS_Store
+**/zzzjwmresources
