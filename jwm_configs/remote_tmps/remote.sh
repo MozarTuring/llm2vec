@@ -38,7 +38,7 @@ echo $PWD
 # pip install -e .
 
 python experiments/download_model.py \
-    --model_name_or_path meta-llama/Meta-Llama-3.1-8B-Instruct \
+    --model_name_or_path meta-llama/Meta-Llama-3.1-8B \
     --dataset_name Tevatron/msmarco-passage-corpus
 
 if [[ -z "${SBATCH_OUT:-}" ]]; then
