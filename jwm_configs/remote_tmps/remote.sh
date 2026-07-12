@@ -36,10 +36,15 @@ which python
 echo $PWD
 
 # pip install -e .
+# pip install torch --force-reinstall --index-url https://download.pytorch.org/whl/cu124
+pip uninstall -y flash-attn 2>/dev/null
+pip install ninja
+pip install flash-attn --no-build-isolation --no-cache-dir --no-binary flash-attn
 
-python experiments/download_model.py \
-    --model_name_or_path meta-llama/Meta-Llama-3.1-8B \
-    --dataset_name Tevatron/msmarco-passage-corpus
+
+# python experiments/download_model.py \
+#     --model_name_or_path meta-llama/Meta-Llama-3.1-8B \
+#     --dataset_name Tevatron/msmarco-passage-corpus
 
 if [[ -z "${SBATCH_OUT:-}" ]]; then
 require_env JWM_SLURM_FILE JWM_RUN_TIME JWM_NODES_NUM

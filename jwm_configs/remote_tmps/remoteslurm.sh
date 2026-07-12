@@ -22,11 +22,10 @@ which python
 echo $PWD
 
 # pip install -e .
+# pip install torch --force-reinstall --index-url https://download.pytorch.org/whl/cu124
+pip install ninja
 
-pip install torch --index-url https://download.pytorch.org/whl/cu124
-pip uninstall -y flash-attn 2>/dev/null
-pip install flash-attn --no-build-isolation
 
-python experiments/download_model.py \
-    --model_name_or_path meta-llama/Meta-Llama-3.1-8B \
-    --dataset_name Tevatron/msmarco-passage-corpus
+# python experiments/download_model.py \
+#     --model_name_or_path meta-llama/Meta-Llama-3.1-8B \
+#     --dataset_name Tevatron/msmarco-passage-corpus
