@@ -1,0 +1,68 @@
+set -e
+
+require_env() {
+for var in "$@"; do
+    if [ -z "${!var}" ]; then
+        echo "Error: $var is not set" >&2
+        exit 1
+    fi
+done
+}
+# change the following based on your running preference
+export RUN_DIR_PRE="/home/x_jinma/project_remote_jwm"
+export RUN_PROJ="llm2vec_jingwei"
+
+JWM_SERVER_NAME=berzeliusampere
+export JWM_MODULES="Miniforge3 buildenv-gcccuda/12.4.1-gcc13.3.0"
+export JWM_CONDAENV="/proj/berzelius-aiics-real/users/x_jinma/conda_envs/llm2vec"
+export JWM_GPU_NUM=1
+export JWM_NODES_NUM=1
+export JWM_RUN_TIME="0-10:00:00"
+export CPUS_PER_TASK=$((8 * JWM_GPU_NUM))
+export MEM_PER_TASK="$((24 * JWM_GPU_NUM))G"
+export JWM_SLURM_FILE=slurm.sh
+
+module --force purge
+module load ${JWM_MODULES}
+
+
+if [ ! -d ${JWM_CONDAENV} ]; then
+
+conda create -p ${JWM_CONDAENV} python=3.10 -y
+
+fi
+conda activate ${JWM_CONDAENV}
+which python
+echo $PWD
+
+pip install -e .
+pip install flash-attn --no-build-isolation
+
+if [[ -z "${SBATCH_OUT:-}" ]]; then
+require_env JWM_SLURM_FILE JWM_RUN_TIME JWM_NODES_NUM
+echo '#!/bin/bash
+
+(while true; do echo "nvidia-smi"; nvidia-smi; sleep 300; done) &
+
+module --force purge
+if [[ -n "${JWM_MODULES}" ]];then
+    echo ${JWM_MODULES}
+    module load ${JWM_MODULES}
+fi
+
+if [[ -n "${JWM_CONDAENV}" ]];then
+echo ${JWM_CONDAENV}
+conda activate ${JWM_CONDAENV}
+fi
+
+' | cat - ${JWM_SLURM_FILE} > jwm_configs/remote_tmps/${JWM_SLURM_FILE}
+
+sbatch_args="--time=${JWM_RUN_TIME} --nodes=${JWM_NODES_NUM} --output=job-%j.out --error=job-%j.out"&&
+sbatch_args="${sbatch_args} --gpus=${JWM_GPU_NUM} --cpus-per-task=${CPUS_PER_TASK} --mem=${MEM_PER_TASK} --signal=TERM@90 -A berzelius-2026-50 --partition=berzelius"
+
+echo ${sbatch_args} jwm_configs/remote_tmps/${JWM_SLURM_FILE}
+SBATCH_OUT=$(sbatch ${sbatch_args} jwm_configs/remote_tmps/${JWM_SLURM_FILE}) || {
+    return 1 2>/dev/null
+    exit 1
+}
+fi
