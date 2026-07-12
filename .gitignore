@@ -8,4 +8,5 @@ cache/**
 results/**
 output/
 *.log
-cluster_scripts/**
+cluster_scripts/****/zzzjwmresources
+.DS_Store
