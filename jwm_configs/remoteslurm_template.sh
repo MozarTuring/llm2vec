@@ -4,17 +4,22 @@ export JWM_CONDAENV="/proj/berzelius-aiics-real/users/x_jinma/conda_envs/llm2vec
 export JWM_GPU_NUM=
 export JWM_NODES_NUM=
 export JWM_RUN_TIME=
-export CPUS_PER_TASK=$((8 * JWM_GPU_NUM))
-export MEM_PER_TASK="$((24 * JWM_GPU_NUM))G"
+export JWM_build_flashattn=
+if [[ -n ${JWM_build_flashattn} ]]; then
+    export CPUS_PER_TASK=32
+    export MEM_PER_TASK="256G"
+else
+    export CPUS_PER_TASK=$((8 * JWM_GPU_NUM))
+    export MEM_PER_TASK="$((24 * JWM_GPU_NUM))G"
+fi
 export JWM_SLURM_FILE=slurm.sh
 
 module --force purge
 module load ${JWM_MODULES}
 
-
 if [ ! -d ${JWM_CONDAENV} ]; then
 
-conda create -p ${JWM_CONDAENV} python=3.10 -y
+    conda create -p ${JWM_CONDAENV} python=3.10 -y
 
 fi
 conda activate ${JWM_CONDAENV}
@@ -23,11 +28,21 @@ echo $PWD
 
 # pip install -e .
 # pip install torch --force-reinstall --index-url https://download.pytorch.org/whl/cu124
-pip install ninja
+# pip install ninja
 pip uninstall -y flash-attn 2>/dev/null
-pip download flash-attn --no-binary flash-attn --no-cache-dir -d ${JWM_CONDAENV}/flash_attn_src
-
-
+mkdir -p ${JWM_CONDAENV}/flash_attn_src
+python -c "
+import json, urllib.request, os
+dest = os.environ['JWM_CONDAENV'] + '/flash_attn_src/flash_attn-2.8.3.post1.tar.gz'
+if not os.path.exists(dest):
+    data = json.loads(urllib.request.urlopen('https://pypi.org/pypi/flash-attn/2.8.3.post1/json').read())
+    url = [u['url'] for u in data['urls'] if u['packagetype'] == 'sdist'][0]
+    print(f'Downloading {url}')
+    urllib.request.urlretrieve(url, dest)
+    print('Done')
+else:
+    print('Source tarball already exists')
+"
 
 # python experiments/download_model.py \
 #     --model_name_or_path meta-llama/Meta-Llama-3.1-8B \

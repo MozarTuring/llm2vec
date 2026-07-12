@@ -2,3 +2,4 @@ JWM_SERVER_NAME=berzeliusampere
 JWM_GPU_NUM=1
 JWM_NODES_NUM=1
 JWM_RUN_TIME="0-10:00:00"
+JWM_build_flashattn=1

@@ -38,6 +38,23 @@ echo $PWD
 # pip install -e .
 # pip install torch --force-reinstall --index-url https://download.pytorch.org/whl/cu124
 pip install ninja
+pip uninstall -y flash-attn 2>/dev/null
+mkdir -p ${JWM_CONDAENV}/flash_attn_src
+python -c "
+import json, urllib.request, os
+dest = os.environ['JWM_CONDAENV'] + '/flash_attn_src/flash_attn-2.8.3.post1.tar.gz'
+if not os.path.exists(dest):
+    data = json.loads(urllib.request.urlopen('https://pypi.org/pypi/flash-attn/2.8.3.post1/json').read())
+    url = [u['url'] for u in data['urls'] if u['packagetype'] == 'sdist'][0]
+    print(f'Downloading {url}')
+    urllib.request.urlretrieve(url, dest)
+    print('Done')
+else:
+    print('Source tarball already exists')
+"
+
+
+
 
 
 # python experiments/download_model.py \

@@ -1,0 +1,1 @@
+module load can make cuda version and gcc version the same. but The glibc issue is different though — glibc is part of the OS, not the module system. The login nodes can run a newer OS (with glibc 2.32+) while compute nodes run an older OS (glibc < 2.32). Modules don't control this.
