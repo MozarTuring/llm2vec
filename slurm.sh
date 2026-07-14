@@ -6,4 +6,5 @@ if [[ -n ${JWM_build_flashattn} ]]; then
     exit
 fi
 
+export LD_LIBRARY_PATH=${LIBRARY_PATH}:${LD_LIBRARY_PATH:-}
 python experiments/run_mntp.py train_configs/mntp/MetaLlama3.1-msmarco.json

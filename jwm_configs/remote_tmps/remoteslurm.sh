@@ -4,7 +4,7 @@ export JWM_CONDAENV="/proj/berzelius-aiics-real/users/x_jinma/conda_envs/llm2vec
 export JWM_GPU_NUM=1
 export JWM_NODES_NUM=1
 export JWM_RUN_TIME="0-10:00:00"
-export JWM_build_flashattn=1
+export JWM_build_flashattn=
 if [[ -n ${JWM_build_flashattn} ]]; then
     export CPUS_PER_TASK=32
     export MEM_PER_TASK="256G"
@@ -29,7 +29,7 @@ echo $PWD
 # pip install -e .
 # pip install torch --force-reinstall --index-url https://download.pytorch.org/whl/cu124
 # pip install ninja
-pip uninstall -y flash-attn 2>/dev/null
+# pip uninstall -y flash-attn 2>/dev/null
 mkdir -p ${JWM_CONDAENV}/flash_attn_src
 python -c "
 import json, urllib.request, os
