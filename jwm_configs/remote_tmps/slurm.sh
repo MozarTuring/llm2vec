@@ -1,6 +1,6 @@
 #!/bin/bash
 
-(while true; do echo "CPU Usage: $(vmstat 1 2 | tail -1 | awk '{print 100 - $15}')% | Total CPUs: $(nproc)"; nvidia-smi; sleep 300; done) &
+(while true; do echo ""; echo "CPU Usage: $(vmstat 1 2 | tail -1 | awk '{print 100 - $15}')% | Total CPUs: $(nproc)"; nvidia-smi; echo ""; sleep 300; done) &
 
 
 
@@ -26,4 +26,5 @@ fi
 
 export LD_LIBRARY_PATH=${LIBRARY_PATH}:${LD_LIBRARY_PATH:-}
 # python experiments/run_mntp.py train_configs/mntp/MetaLlama3.1-msmarco.json
-python experiments/run_mntp.py train_configs/mntp/Sheared-Llama.json
+# python experiments/run_mntp.py train_configs/mntp/Sheared-Llama.json
+python experiments/run_mntp.py /train_configs/mntp/Mistral.json

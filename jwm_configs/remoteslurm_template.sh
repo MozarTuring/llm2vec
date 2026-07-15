@@ -5,6 +5,8 @@ export JWM_GPU_NUM=
 export JWM_NODES_NUM=
 export JWM_RUN_TIME=
 export JWM_build_flashattn=
+export JWM_SLURM_RUN_COMMAND=
+export JWM_SLURM_RUN_ARGS=
 if [[ -n ${JWM_build_flashattn} ]]; then
     export CPUS_PER_TASK=32
     export MEM_PER_TASK="256G"
@@ -12,7 +14,7 @@ else
     export CPUS_PER_TASK=$((8 * JWM_GPU_NUM))
     export MEM_PER_TASK="$((24 * JWM_GPU_NUM))G"
 fi
-export JWM_SLURM_FILE=slurm.sh
+export JWM_SLURM_FILE=
 
 module --force purge
 module load ${JWM_MODULES}

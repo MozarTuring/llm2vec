@@ -9,7 +9,7 @@ for var in "$@"; do
 done
 }
 # change the following based on your running preference
-export RUN_DIR_PRE="/home/x_jinma/project_remote_jwm"
+export RUN_DIR_HOME="/home/x_jinma"
 export RUN_PROJ="llm2vec_jingwei"
 
 JWM_SERVER_NAME=berzeliusampere
@@ -66,7 +66,7 @@ else:
 #     --dataset_name Tevatron/msmarco-passage-corpus
 
 require_env JWM_SLURM_FILE JWM_RUN_TIME JWM_NODES_NUM
-cat jwm_configs/remote_tmps/slurm_header.sh ${JWM_SLURM_FILE} > jwm_configs/remote_tmps/${JWM_SLURM_FILE}
+cat ${RUN_DIR_HOME}/project_remote_jwm/common_tools_jingwei/slurm_header.sh ${JWM_SLURM_FILE} > jwm_configs/remote_tmps/${JWM_SLURM_FILE}
 
 sbatch_args="--time=${JWM_RUN_TIME} --nodes=${JWM_NODES_NUM} --output=jwmlogs/${JWM_RUN_START_TIME}/job-%j.out --error=jwmlogs/${JWM_RUN_START_TIME}/job-%j.out"&&
 sbatch_args="${sbatch_args} --gpus=${JWM_GPU_NUM} --cpus-per-task=${CPUS_PER_TASK} --mem=${MEM_PER_TASK} --signal=TERM@90 -A berzelius-2026-50 --partition=berzelius"
