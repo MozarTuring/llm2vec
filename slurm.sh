@@ -8,4 +8,5 @@ fi
 
 export LD_LIBRARY_PATH=${LIBRARY_PATH}:${LD_LIBRARY_PATH:-}
 # python experiments/run_mntp.py train_configs/mntp/MetaLlama3.1-msmarco.json
-python experiments/run_mntp.py train_configs/mntp/Sheared-Llama.json
+# python experiments/run_mntp.py train_configs/mntp/Sheared-Llama.json
+python experiments/run_mntp.py /train_configs/mntp/Mistral.json
