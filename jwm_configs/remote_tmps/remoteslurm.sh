@@ -44,6 +44,9 @@ else:
     print('Source tarball already exists')
 "
 
+# pip install peft==0.12.0
+
+
 # python experiments/download_model.py \
 #     --model_name_or_path meta-llama/Meta-Llama-3.1-8B \
 #     --dataset_name Tevatron/msmarco-passage-corpus

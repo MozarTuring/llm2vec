@@ -142,3 +142,11 @@ It's a deliberate design choice — the module name is **build**env. It's meant 
 - `LD_LIBRARY_PATH` is global — it affects **every** dynamically linked program in the session, which can cause subtle version conflicts
 
 The "proper" HPC approach would be to compile `flash_attn` with `-Wl,-rpath,/path/to/gcc13/lib64` so the `.so` itself knows where to find the right `libstdc++`. But `pip install` doesn't do that by default, so the `LD_LIBRARY_PATH` workaround is the practical fix.
+
+
+#
+Done. peft downgraded from 0.19.1 to 0.12.0. 
+
+The issue was a **bug in peft 0.19.1** — it checks `torch.distributed.tensor.DTensor` at line 173 but never imports `torch.distributed.tensor` as a submodule. Python doesn't auto-import submodules as parent attributes, so it fails with `AttributeError: module 'torch.distributed' has no attribute 'tensor'`. peft 0.12.0 doesn't have this DTensor code path at all, and matches the era of `transformers==4.44.2` that llm2vec pins.
+
+You can re-run your job now.
