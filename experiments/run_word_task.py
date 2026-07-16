@@ -619,6 +619,7 @@ def main():
             cache_dir=model_args.cache_dir,
             token=model_args.token,
             streaming=data_args.streaming,
+            trust_remote_code=model_args.trust_remote_code,
         )
         if "validation" not in raw_datasets.keys():
             raw_datasets["validation"] = load_dataset(
@@ -628,6 +629,7 @@ def main():
                 cache_dir=model_args.cache_dir,
                 token=model_args.token,
                 streaming=data_args.streaming,
+                trust_remote_code=model_args.trust_remote_code,
             )
             raw_datasets["train"] = load_dataset(
                 data_args.dataset_name,
@@ -636,6 +638,7 @@ def main():
                 cache_dir=model_args.cache_dir,
                 token=model_args.token,
                 streaming=data_args.streaming,
+                trust_remote_code=model_args.trust_remote_code,
             )
     else:
         data_files = {}

@@ -10,6 +10,7 @@
     "retroactive_labels": "next_token",
     "output_dir": "output/word-task/pos_tags/ShearedLlama/bi-mntp",
     "dataset_name": "conll2003",
+    "trust_remote_code": true,
     "task": "pos_tags",
     "num_train_epochs": 10,
     "learning_rate": 5e-4,
