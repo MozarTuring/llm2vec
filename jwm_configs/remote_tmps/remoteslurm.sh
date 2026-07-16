@@ -6,7 +6,11 @@ export JWM_NODES_NUM=1
 export JWM_RUN_TIME="0-10:00:00"
 export JWM_build_flashattn=
 export JWM_SLURM_RUN_COMMAND="python experiments/run_mntp.py"
-export JWM_SLURM_RUN_ARGS="train_configs/mntp/Mistral.json"
+export JWM_SLURM_RUN_ARGS="train_configs/mntp/MetaLlama3.json"
+if [[ ${JWM_SLURM_RUN_ARGS} == "train_configs/mntp/MetaLlama3.json" ]]; then
+
+    export JWM_SLURM_NODES="--nodelist=node[061-064,065,066-093]"
+fi
 if [[ -n ${JWM_build_flashattn} ]]; then
     export CPUS_PER_TASK=32
     export MEM_PER_TASK="256G"
@@ -47,7 +51,6 @@ else:
 "
 
 # pip install peft==0.12.0
-
 
 # python experiments/download_model.py \
 #     --model_name_or_path meta-llama/Meta-Llama-3.1-8B \

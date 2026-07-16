@@ -1,12 +1,16 @@
-JWM_SERVER_NAME=
+JWM_SERVER_NAME=berzeliusampere
 export JWM_MODULES="Miniforge3 buildenv-gcccuda/12.4.1-gcc13.3.0"
 export JWM_CONDAENV="/proj/berzelius-aiics-real/users/x_jinma/conda_envs/llm2vec"
-export JWM_GPU_NUM=
-export JWM_NODES_NUM=
-export JWM_RUN_TIME=
+export JWM_GPU_NUM=1
+export JWM_NODES_NUM=1
+export JWM_RUN_TIME="0-10:00:00"
 export JWM_build_flashattn=
-export JWM_SLURM_RUN_COMMAND=
-export JWM_SLURM_RUN_ARGS=
+export JWM_SLURM_RUN_COMMAND="python experiments/run_word_task.py"
+export JWM_SLURM_RUN_ARGS="train_configs/word-task/ShearedLlama-bi-mntp.json"
+if [[ ${JWM_SLURM_RUN_ARGS} == "train_configs/mntp/MetaLlama3.json" ]]; then
+
+    export JWM_SLURM_NODES="--nodelist=node[061-064,065,066-093]"
+fi
 if [[ -n ${JWM_build_flashattn} ]]; then
     export CPUS_PER_TASK=32
     export MEM_PER_TASK="256G"
@@ -14,7 +18,7 @@ else
     export CPUS_PER_TASK=$((8 * JWM_GPU_NUM))
     export MEM_PER_TASK="$((24 * JWM_GPU_NUM))G"
 fi
-export JWM_SLURM_FILE=
+export JWM_SLURM_FILE=slurm.sh
 
 module --force purge
 module load ${JWM_MODULES}
@@ -47,7 +51,6 @@ else:
 "
 
 # pip install peft==0.12.0
-
 
 # python experiments/download_model.py \
 #     --model_name_or_path meta-llama/Meta-Llama-3.1-8B \

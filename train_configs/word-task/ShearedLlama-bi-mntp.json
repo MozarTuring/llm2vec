@@ -1,6 +1,6 @@
 {
     "model_name_or_path": "princeton-nlp/Sheared-LLaMA-1.3B",
-    "peft_addr": "McGill-NLP/LLM2Vec-Sheared-LLaMA-mntp",
+    "peft_addr": "output/mntp/Sheared-LLaMA-1.3B",
     "model_class": "custom",
     "bidirectional": true,
     "classifier_dropout": 0.1,

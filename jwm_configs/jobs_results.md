@@ -3,3 +3,8 @@
 sheard llama
 
 
+20260715_120029  finished
+mistral
+
+20260715_185526  finished
+llama3-8b
