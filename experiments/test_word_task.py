@@ -255,7 +255,7 @@ if __name__ == "__main__":
         classifier_path = os.path.join(args.cls_addr, "classifier.pt")
         if os.path.exists(classifier_path):
             print(f"Loading classifier from {classifier_path}")
-            model.classifier = torch.load(classifier_path)
+            model.classifier = torch.load(classifier_path, weights_only=False)
         else:
             raise ValueError("classifier does not exist in", classifier_path)
 
