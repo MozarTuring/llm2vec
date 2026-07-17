@@ -19,8 +19,8 @@ export JWM_GPU_NUM=1
 export JWM_NODES_NUM=1
 export JWM_RUN_TIME="0-10:00:00"
 export JWM_build_flashattn=
-export JWM_SLURM_RUN_COMMAND="python experiments/test_word_task.py"
-export JWM_SLURM_RUN_ARGS=" --config_file test_configs/word-task/ShearedLlama-bi-mntp.json"
+export JWM_SLURM_RUN_COMMAND="python experiments/run_word_task.py"
+export JWM_SLURM_RUN_ARGS="train_configs/word-task/ShearedLlama-bi.json"
 if [[ ${JWM_SLURM_RUN_ARGS} == "train_configs/mntp/MetaLlama3.json" ]]; then
 
     export JWM_SLURM_NODES="--nodelist=node[061-064,065,066-093]"
@@ -66,7 +66,7 @@ else:
 
 # pip install peft==0.12.0
 # pip install datasets==3.6.0
-pip install seqeval
+# pip install seqeval
 # python experiments/download_model.py \
 #     --model_name_or_path meta-llama/Meta-Llama-3.1-8B \
 #     --dataset_name Tevatron/msmarco-passage-corpus
