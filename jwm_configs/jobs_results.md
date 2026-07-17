@@ -8,3 +8,7 @@ mistral
 
 20260715_185526  finished
 llama3-8b
+
+20260716_162040  finished
+word task sheard llama
+

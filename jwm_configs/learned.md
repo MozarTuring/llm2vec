@@ -150,3 +150,6 @@ Done. peft downgraded from 0.19.1 to 0.12.0.
 The issue was a **bug in peft 0.19.1** — it checks `torch.distributed.tensor.DTensor` at line 173 but never imports `torch.distributed.tensor` as a submodule. Python doesn't auto-import submodules as parent attributes, so it fails with `AttributeError: module 'torch.distributed' has no attribute 'tensor'`. peft 0.12.0 doesn't have this DTensor code path at all, and matches the era of `transformers==4.44.2` that llm2vec pins.
 
 You can re-run your job now.
+
+#
+The TrainingArguments class (imported from transformers), has default per_device_train_batch_size and per_device_eval_batch_size, both are 8
