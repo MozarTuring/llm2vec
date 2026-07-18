@@ -8,7 +8,7 @@ JWM_build_flashattn=
 
 JWM_SLURM_RUN_COMMAND="python experiments/test_word_task.py"
 
-# JWM_SLURM_RUN_ARGS=" --config_file test_configs/word-task/ShearedLlama-bi-mntp.json"
-JWM_SLURM_RUN_ARGS=" --config_file test_configs/word-task/ShearedLlama-bi.json"
+JWM_SLURM_RUN_ARGS=" --config_file test_configs/word-task/ShearedLlama-bi-mntp.json"
+# JWM_SLURM_RUN_ARGS=" --config_file test_configs/word-task/ShearedLlama-bi.json"
 # JWM_SLURM_RUN_ARGS="train_configs/word-task/Llama2-bi-mntp.json"
 

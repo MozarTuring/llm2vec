@@ -12,6 +12,8 @@ word task sheard llama(bi+mntp) training
 
 word task sheard llama(bi+mntp) test
 * 20260717_111213  finished, 1500(0.9098)
+* 20260718_083656  finished, 3000(0.9182)
+
 
 word task sheard llama(bi) training and test
 * 20260717_175504  finished; 20260717_224743  finished
