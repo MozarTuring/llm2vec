@@ -15,13 +15,13 @@ export RUN_PROJ="llm2vec_jingwei"
 JWM_SERVER_NAME=berzeliusampere
 export JWM_MODULES="Miniforge3 buildenv-gcccuda/12.4.1-gcc13.3.0"
 export JWM_CONDAENV="/proj/berzelius-aiics-real/users/x_jinma/conda_envs/llm2vec"
-export JWM_GPU_NUM=1
+export JWM_GPU_NUM=2
 export JWM_NODES_NUM=1
 export JWM_RUN_TIME="0-10:00:00"
 export JWM_build_flashattn=
-export JWM_SLURM_RUN_COMMAND="python experiments/test_word_task.py"
-export JWM_SLURM_RUN_ARGS=" --config_file test_configs/word-task/ShearedLlama-bi-mntp.json"
-if [[ ${JWM_SLURM_RUN_ARGS} == "train_configs/mntp/MetaLlama3.json" ]]; then
+export JWM_SLURM_RUN_COMMAND="python experiments/run_mntp.py"
+export JWM_SLURM_RUN_ARGS="train_configs/mntp/MetaLlama3.1-msmarco.json"
+if [[ ${JWM_SLURM_RUN_ARGS} == "train_configs/mntp/MetaLlama3"* ]]; then
 
     export JWM_SLURM_NODES="--nodelist=node[061-064,065,066-093]"
 fi
