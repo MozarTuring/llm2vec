@@ -7,7 +7,7 @@ export JWM_RUN_TIME=
 export JWM_build_flashattn=
 export JWM_SLURM_RUN_COMMAND=
 export JWM_SLURM_RUN_ARGS=
-if [[ ${JWM_SLURM_RUN_ARGS} == "train_configs/mntp/MetaLlama3"* ]]; then
+if [[ ${JWM_SLURM_RUN_ARGS} == *"MetaLlama3"* ]]; then
 
     export JWM_SLURM_NODES="--nodelist=node[061-064,065,066-093]"
 fi
