@@ -8,6 +8,8 @@ for var in "$@"; do
     fi
 done
 }
+
+
 # change the following based on your running preference
 export RUN_DIR_HOME="/home/x_jinma"
 export RUN_PROJ="llm2vec_jingwei"
@@ -15,13 +17,13 @@ export RUN_PROJ="llm2vec_jingwei"
 JWM_SERVER_NAME=berzeliusampere
 export JWM_MODULES="Miniforge3 buildenv-gcccuda/12.4.1-gcc13.3.0"
 export JWM_CONDAENV="/proj/berzelius-aiics-real/users/x_jinma/conda_envs/llm2vec"
-export JWM_GPU_NUM=2
+export JWM_GPU_NUM=1
 export JWM_NODES_NUM=1
-export JWM_RUN_TIME="3-00:00:00"
+export JWM_RUN_TIME="0-10:00:00"
 export JWM_build_flashattn=
-export JWM_SLURM_RUN_COMMAND="python experiments/run_mntp.py"
-export JWM_SLURM_RUN_ARGS="train_configs/mntp/MetaLlama3.1-msmarco.json"
-if [[ ${JWM_SLURM_RUN_ARGS} == "train_configs/mntp/MetaLlama3"* ]]; then
+export JWM_SLURM_RUN_COMMAND="python experiments/run_word_task.py"
+export JWM_SLURM_RUN_ARGS="train_configs/word-task/MetaLlama3.1-bi-mntp.json"
+if [[ ${JWM_SLURM_RUN_ARGS} == *"MetaLlama3"* ]]; then
 
     export JWM_SLURM_NODES="--nodelist=node[061-064,065,066-093]"
 fi
@@ -72,13 +74,16 @@ else:
 #     --dataset_name Tevatron/msmarco-passage-corpus
 
 require_env JWM_SLURM_FILE JWM_RUN_TIME JWM_NODES_NUM
-cat ${RUN_DIR_HOME}/project_remote_jwm/common_tools_jingwei/slurm_header.sh ${JWM_SLURM_FILE} > jwm_configs/${_mode}/remote_tmps/${JWM_SLURM_FILE}
+cat ${RUN_DIR_HOME}/project_remote_jwm/common_tools_jingwei/slurm_header.sh ${JWM_SLURM_FILE} > jwm_configs/${JWM_MODE}/remote_tmps/${JWM_SLURM_FILE}
+echo """
+rm ${RUN_DIR_HOME}/project_remote_jwm/${RUN_PROJ}/${JWM_RUN_START_TIME}.jwm
+""">>jwm_configs/${JWM_MODE}/remote_tmps/${JWM_SLURM_FILE}
 
 sbatch_args="--time=${JWM_RUN_TIME} --nodes=${JWM_NODES_NUM} --output=jwmlogs/${JWM_RUN_START_TIME}/job-%j.out --error=jwmlogs/${JWM_RUN_START_TIME}/job-%j.out ${JWM_SLURM_NODES}"
 sbatch_args="${sbatch_args} --gpus=${JWM_GPU_NUM} --cpus-per-task=${CPUS_PER_TASK} --mem=${MEM_PER_TASK} --signal=TERM@90 -A berzelius-2026-50 --partition=berzelius"
 
-echo ${sbatch_args} jwm_configs/${_mode}/remote_tmps/${JWM_SLURM_FILE}
-SBATCH_OUT=$(sbatch ${sbatch_args} jwm_configs/${_mode}/remote_tmps/${JWM_SLURM_FILE}) || {
+echo ${sbatch_args} jwm_configs/${JWM_MODE}/remote_tmps/${JWM_SLURM_FILE}
+SBATCH_OUT=$(sbatch ${sbatch_args} jwm_configs/${JWM_MODE}/remote_tmps/${JWM_SLURM_FILE}) || {
     return 1 2>/dev/null
     exit 1
 }

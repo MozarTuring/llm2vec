@@ -1,7 +1,6 @@
 #!/bin/bash
 
-(while true; do echo ""; echo "CPU Usage: $(vmstat 1 2 | tail -1 | awk '{print 100 - $15}')% | Total CPUs: $(nproc)"; nvidia-smi; echo ""; sleep 300; done) &
-
+(while true; do echo ""; echo "CPU Usage: $(vmstat 1 2 | tail -1 | awk '{print 100 - $15}')% | Total CPUs: $(nproc)"; nvidia-smi; echo ""; sleep 300; done) > jwmlogs/${JWM_RUN_START_TIME}/resource_usage.log 2>&1 &
 
 
 module --force purge
@@ -27,3 +26,6 @@ fi
 export LD_LIBRARY_PATH=${LIBRARY_PATH}:${LD_LIBRARY_PATH:-}
 
 ${JWM_SLURM_RUN_COMMAND} ${JWM_SLURM_RUN_ARGS}
+
+rm /home/x_jinma/project_remote_jwm/llm2vec_jingwei/20260720_105720.jwm
+
