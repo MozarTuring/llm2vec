@@ -21,8 +21,8 @@ export JWM_GPU_NUM=1
 export JWM_NODES_NUM=1
 export JWM_RUN_TIME="0-10:00:00"
 export JWM_build_flashattn=
-export JWM_SLURM_RUN_COMMAND="python experiments/run_word_task.py"
-export JWM_SLURM_RUN_ARGS="train_configs/word-task/MetaLlama3.1-bi-mntp.json"
+export JWM_SLURM_RUN_COMMAND="python experiments/test_word_task.py"
+export JWM_SLURM_RUN_ARGS=" --config_file test_configs/word-task/MetaLlama3_1-bi-mntp.json"
 if [[ ${JWM_SLURM_RUN_ARGS} == *"MetaLlama3"* ]]; then
 
     export JWM_SLURM_NODES="--nodelist=node[061-064,065,066-093]"

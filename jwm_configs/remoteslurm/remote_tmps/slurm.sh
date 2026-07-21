@@ -27,5 +27,5 @@ export LD_LIBRARY_PATH=${LIBRARY_PATH}:${LD_LIBRARY_PATH:-}
 
 ${JWM_SLURM_RUN_COMMAND} ${JWM_SLURM_RUN_ARGS}
 
-rm /home/x_jinma/project_remote_jwm/llm2vec_jingwei/20260720_105720.jwm
+rm /home/x_jinma/project_remote_jwm/llm2vec_jingwei/20260721_081841.jwm
 
