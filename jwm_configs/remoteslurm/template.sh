@@ -1,4 +1,4 @@
-JWM_SERVER_NAME=
+export JWM_SERVER_NAME=
 export JWM_MODULES="Miniforge3 buildenv-gcccuda/12.4.1-gcc13.3.0"
 export JWM_CONDAENV="/proj/berzelius-aiics-real/users/x_jinma/conda_envs/llm2vec"
 export JWM_GPU_NUM=
@@ -53,6 +53,7 @@ else:
 # pip install peft==0.12.0
 # pip install datasets==3.6.0
 # pip install seqeval
+pip install jupyterlab
 # python experiments/download_model.py \
 #     --model_name_or_path meta-llama/Meta-Llama-3.1-8B \
 #     --dataset_name Tevatron/msmarco-passage-corpus
