@@ -14,15 +14,16 @@ done
 export RUN_DIR_HOME="/home/x_jinma"
 export RUN_PROJ="llm2vec_jingwei"
 
-JWM_SERVER_NAME=berzeliusampere
+export JWM_NOTEBOOK=1
+export JWM_SERVER_NAME=berzeliusampere
 export JWM_MODULES="Miniforge3 buildenv-gcccuda/12.4.1-gcc13.3.0"
 export JWM_CONDAENV="/proj/berzelius-aiics-real/users/x_jinma/conda_envs/llm2vec"
 export JWM_GPU_NUM=1
 export JWM_NODES_NUM=1
-export JWM_RUN_TIME="0-10:00:00"
+export JWM_RUN_TIME="1-00:00:00"
 export JWM_build_flashattn=
-export JWM_SLURM_RUN_COMMAND="python experiments/run_word_task.py"
-export JWM_SLURM_RUN_ARGS="train_configs/word-task/MetaLlama3_1-bi.json"
+export JWM_SLURM_RUN_COMMAND="python experiments/run_layerwise_finetune.py"
+export JWM_SLURM_RUN_ARGS="train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json"
 if [[ ${JWM_SLURM_RUN_ARGS} == *"MetaLlama3"* ]]; then
 
     export JWM_SLURM_NODES="--nodelist=node[061-064,065,066-093]"
@@ -69,18 +70,20 @@ else:
 # pip install peft==0.12.0
 # pip install datasets==3.6.0
 # pip install seqeval
+# pip install jupyterlab
 # python experiments/download_model.py \
 #     --model_name_or_path meta-llama/Meta-Llama-3.1-8B \
 #     --dataset_name Tevatron/msmarco-passage-corpus
 
 require_env JWM_SLURM_FILE JWM_RUN_TIME JWM_NODES_NUM
+if [[ ${JWM_NOTEBOOK} == 1 ]];then
+    JWM_SLURM_RUN_COMMAND="jupyter lab --MappingKernelManager.cull_idle_timeout=3600 --MappingKernelManager.cull_interval=360 --MappingKernelManager.cull_connected=True --ip=0.0.0.0 --port=18889 --no-browser --allow-root --NotebookApp.token=''"
+    JWM_SLURM_RUN_ARGS=""
+fi
 cat ${RUN_DIR_HOME}/project_remote_jwm/common_tools_jingwei/slurm_header.sh ${JWM_SLURM_FILE} > jwm_configs/${JWM_MODE}/remote_tmps/${JWM_SLURM_FILE}
-echo """
-rm ${RUN_DIR_HOME}/project_remote_jwm/${RUN_PROJ}/${JWM_RUN_START_TIME}.jwm
-""">>jwm_configs/${JWM_MODE}/remote_tmps/${JWM_SLURM_FILE}
 
 sbatch_args="--time=${JWM_RUN_TIME} --nodes=${JWM_NODES_NUM} --output=jwmlogs/${JWM_RUN_START_TIME}/job-%j.out --error=jwmlogs/${JWM_RUN_START_TIME}/job-%j.out ${JWM_SLURM_NODES}"
-sbatch_args="${sbatch_args} --gpus=${JWM_GPU_NUM} --cpus-per-task=${CPUS_PER_TASK} --mem=${MEM_PER_TASK} --signal=TERM@90 -A berzelius-2026-50 --partition=berzelius"
+sbatch_args="${sbatch_args} --gpus=${JWM_GPU_NUM} --cpus-per-task=${CPUS_PER_TASK} --mem=${MEM_PER_TASK} --signal=B:USR1@120 -A berzelius-2026-50 --partition=berzelius"
 
 echo ${sbatch_args} jwm_configs/${JWM_MODE}/remote_tmps/${JWM_SLURM_FILE}
 SBATCH_OUT=$(sbatch ${sbatch_args} jwm_configs/${JWM_MODE}/remote_tmps/${JWM_SLURM_FILE}) || {

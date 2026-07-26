@@ -54,7 +54,7 @@ else:
 # pip install peft==0.12.0
 # pip install datasets==3.6.0
 # pip install seqeval
-pip install jupyterlab
+# pip install jupyterlab
 # python experiments/download_model.py \
 #     --model_name_or_path meta-llama/Meta-Llama-3.1-8B \
 #     --dataset_name Tevatron/msmarco-passage-corpus
