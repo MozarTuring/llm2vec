@@ -16,8 +16,8 @@ def load_msmarco_data(num_queries=500, num_passages=50000):
     passage_id = 0
 
     for i, example in enumerate(dataset):
-        if len(queries) >= num_queries:
-            break
+        # if len(queries) >= num_queries:
+        #     break
 
         query = example["query"]
         query_id = str(i)

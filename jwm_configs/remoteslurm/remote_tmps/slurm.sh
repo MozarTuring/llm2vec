@@ -2,13 +2,13 @@
 
 early_warning() {
     echo "2 minutes left — saving checkpoint..."
-    rm ${RUN_DIR_HOME}/project_remote_jwm/${RUN_PROJ}/${JWM_RUN_START_TIME}.jwm
     # save_checkpoint
     # optionally keep running, or exit gracefully
 }
 
 final_cleanup() {
     echo "Being killed — last-resort cleanup..."
+    rm ${RUN_DIR_HOME}/project_remote_jwm/${RUN_PROJ}/${JWM_RUN_START_TIME}.jwm
 }
 
 trap early_warning SIGUSR1    # 120s before limit — your warning
@@ -36,12 +36,18 @@ if [[ -n "${JWM_CONDAENV}" ]]; then
 fi
 which python
 
+
 if [[ -n ${JWM_build_flashattn} ]]; then
     MAX_JOBS=${CPUS_PER_TASK} FLASH_ATTENTION_FORCE_BUILD=TRUE pip install ${JWM_CONDAENV}/flash_attn_src/flash_attn*.tar.gz --no-build-isolation --no-cache-dir
     echo "flash attn build done"
     exit
 fi
 
-export LD_LIBRARY_PATH=${LIBRARY_PATH}:${LD_LIBRARY_PATH:-}
 
-${JWM_SLURM_RUN_COMMAND} ${JWM_SLURM_RUN_ARGS}
+
+
+export LD_LIBRARY_PATH=/software/sse/manual/CUDA/12.4.1_550.54.15/lib64:/software/sse/manual/CUDA/12.4.1_550.54.15/extras/CUPTI/lib64:/software/sse/manual/ScaLAPACK/2.2.0/gcc-13.3.0/openmpi-5.0.3/openblas-0.3.27/lib:/software/sse/manual/OpenBLAS/0.3.27/gcc-13.3.0/sequential/lp64/lib:/software/sse/manual/FFTW/3.3.10/gcc-13.3.0/openmpi-5.0.3/lib:/software/sse/manual/OpenMPI/5.0.3/gcc-13.3.0/cuda-12.4.1/hpc1/lib:/software/sse/manual/GCC/13.3.0/lib64:
+
+jupyter lab --MappingKernelManager.cull_idle_timeout=3600 --MappingKernelManager.cull_interval=360 --MappingKernelManager.cull_connected=True --ip=0.0.0.0 --port=18889 --no-browser --allow-root --NotebookApp.token=''  &
+wait $!
+

@@ -54,23 +54,35 @@ echo $PWD
 # pip install ninja
 # pip uninstall -y flash-attn 2>/dev/null
 mkdir -p ${JWM_CONDAENV}/flash_attn_src
-python -c "
-import json, urllib.request, os
-dest = os.environ['JWM_CONDAENV'] + '/flash_attn_src/flash_attn-2.8.3.post1.tar.gz'
-if not os.path.exists(dest):
-    data = json.loads(urllib.request.urlopen('https://pypi.org/pypi/flash-attn/2.8.3.post1/json').read())
-    url = [u['url'] for u in data['urls'] if u['packagetype'] == 'sdist'][0]
-    print(f'Downloading {url}')
-    urllib.request.urlretrieve(url, dest)
-    print('Done')
-else:
-    print('Source tarball already exists')
-"
+# python -c "
+# import json, urllib.request, os
+# dest = os.environ['JWM_CONDAENV'] + '/flash_attn_src/flash_attn-2.8.3.post1.tar.gz'
+# if not os.path.exists(dest):
+#     data = json.loads(urllib.request.urlopen('https://pypi.org/pypi/flash-attn/2.8.3.post1/json').read())
+#     url = [u['url'] for u in data['urls'] if u['packagetype'] == 'sdist'][0]
+#     print(f'Downloading {url}')
+#     urllib.request.urlretrieve(url, dest)
+#     print('Done')
+# else:
+#     print('Source tarball already exists')
+# "
+
+# python << 'EOF'
+# from datasets import load_dataset
+# dataset = load_dataset("microsoft/ms_marco", "v1.1", split="train")
+# EOF
 
 # pip install peft==0.12.0
 # pip install datasets==3.6.0
 # pip install seqeval
 # pip install jupyterlab
+# pip install sentence_transformers
+# python << 'EOF'
+# from sentence_transformers import SparseEncoder
+# model = SparseEncoder("naver/splade-cocondenser-selfdistil")
+# EOF
+
+
 # python experiments/download_model.py \
 #     --model_name_or_path meta-llama/Meta-Llama-3.1-8B \
 #     --dataset_name Tevatron/msmarco-passage-corpus
@@ -82,8 +94,16 @@ if [[ ${JWM_NOTEBOOK} == 1 ]];then
 fi
 cat ${RUN_DIR_HOME}/project_remote_jwm/common_tools_jingwei/slurm_header.sh ${JWM_SLURM_FILE} > jwm_configs/${JWM_MODE}/remote_tmps/${JWM_SLURM_FILE}
 
-sbatch_args="--time=${JWM_RUN_TIME} --nodes=${JWM_NODES_NUM} --output=jwmlogs/${JWM_RUN_START_TIME}/job-%j.out --error=jwmlogs/${JWM_RUN_START_TIME}/job-%j.out ${JWM_SLURM_NODES}"
-sbatch_args="${sbatch_args} --gpus=${JWM_GPU_NUM} --cpus-per-task=${CPUS_PER_TASK} --mem=${MEM_PER_TASK} --signal=B:USR1@120 -A berzelius-2026-50 --partition=berzelius"
+echo "
+
+export LD_LIBRARY_PATH=${LIBRARY_PATH}:${LD_LIBRARY_PATH:-}
+
+${JWM_SLURM_RUN_COMMAND} ${JWM_SLURM_RUN_ARGS} &
+wait \$!
+" >> jwm_configs/${JWM_MODE}/remote_tmps/${JWM_SLURM_FILE}
+
+sbatch_args="--signal=B:USR1@120 --time=${JWM_RUN_TIME} --nodes=${JWM_NODES_NUM} --output=jwmlogs/${JWM_RUN_START_TIME}/job-%j.out --error=jwmlogs/${JWM_RUN_START_TIME}/job-%j.out ${JWM_SLURM_NODES}"
+sbatch_args="${sbatch_args} --gpus=${JWM_GPU_NUM} --cpus-per-task=${CPUS_PER_TASK} --mem=${MEM_PER_TASK}  -A berzelius-2026-50 --partition=berzelius"
 
 echo ${sbatch_args} jwm_configs/${JWM_MODE}/remote_tmps/${JWM_SLURM_FILE}
 SBATCH_OUT=$(sbatch ${sbatch_args} jwm_configs/${JWM_MODE}/remote_tmps/${JWM_SLURM_FILE}) || {
