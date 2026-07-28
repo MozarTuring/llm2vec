@@ -62,7 +62,7 @@ def encode_in_batches(model, texts, batch_size=64, is_query=True):
 
 def mine_hard_negatives(
     model, queries, positives, all_passages, top_k=30, num_hard_negatives=10,
-    query_batch_size=256, passage_batch_size=10000,
+    query_batch_size=256, passage_batch_size=300000,
 ):
     """
     Mine hard negatives: passages that score highly with the query
