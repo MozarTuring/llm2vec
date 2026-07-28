@@ -72,24 +72,18 @@ def mine_hard_negatives(
     passage_ids = list(all_passages.keys())
     passage_texts = [all_passages[pid] for pid in passage_ids]
 
-    print(f"\nEncoding {len(query_texts)} queries...")
-    batch_size=256
-    query_embeddings = encode_in_batches(model, query_texts[:2], batch_size=batch_size, is_query=True)
+    print(f"\nEncoding {len(passage_texts)} passages...")
+    passage_embeddings = encode_in_batches(model, passage_texts, batch_size=256, is_query=False)
 
-    print(f"Encoding {len(passage_texts)} passages...")
-    passage_embeddings = encode_in_batches(
-        model, passage_texts[:10], batch_size=batch_size, is_query=False
-    )
-
-    print("\nComputing similarity scores and mining hard negatives...")
-
+    print(f"\nMining hard negatives for {len(query_texts)} queries...")
     hard_negatives = {}
-    batch_size = 100
+    batch_size = 256
 
     for batch_start in range(0, len(query_ids), batch_size):
         batch_end = min(batch_start + batch_size, len(query_ids))
-        batch_query_emb = query_embeddings[batch_start:batch_end]
+        batch_query_texts = query_texts[batch_start:batch_end]
 
+        batch_query_emb = model.encode_query(batch_query_texts)
         scores = model.similarity(batch_query_emb, passage_embeddings)
 
         _, top_indices = torch.topk(scores, k=min(top_k, scores.shape[1]), dim=1)
@@ -116,8 +110,7 @@ def mine_hard_negatives(
                 "hard_negatives": negatives,
             }
 
-        if batch_start % 200 == 0:
-            print(f"  Processed {batch_end}/{len(query_ids)} queries")
+        print(f"  Processed {batch_end}/{len(query_ids)} queries")
 
     return hard_negatives
 
