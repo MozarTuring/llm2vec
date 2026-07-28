@@ -61,7 +61,8 @@ def encode_in_batches(model, texts, batch_size=64, is_query=True):
 
 
 def mine_hard_negatives(
-    model, queries, positives, all_passages, top_k=30, num_hard_negatives=10
+    model, queries, positives, all_passages, top_k=30, num_hard_negatives=10,
+    query_batch_size=256, passage_batch_size=10000,
 ):
     """
     Mine hard negatives: passages that score highly with the query
@@ -71,33 +72,50 @@ def mine_hard_negatives(
     query_texts = [queries[qid] for qid in query_ids]
     passage_ids = list(all_passages.keys())
     passage_texts = [all_passages[pid] for pid in passage_ids]
+    num_passages = len(passage_texts)
 
-    print(f"\nEncoding {len(passage_texts)} passages...")
-    passage_embeddings = encode_in_batches(model, passage_texts[:100], batch_size=256, is_query=False)
+    print(f"\nMining hard negatives for {len(query_texts)} queries against {num_passages} passages...")
 
-    print(f"\nMining hard negatives for {len(query_texts)} queries...")
     hard_negatives = {}
-    batch_size = 256
 
-    for batch_start in range(0, len(query_ids), batch_size):
-        batch_end = min(batch_start + batch_size, len(query_ids))
-        batch_query_texts = query_texts[batch_start:batch_end]
+    for q_start in range(0, len(query_ids), query_batch_size):
+        q_end = min(q_start + query_batch_size, len(query_ids))
+        batch_query_texts = query_texts[q_start:q_end]
+        num_queries_in_batch = q_end - q_start
 
         batch_query_emb = model.encode_query(batch_query_texts)
-        scores = model.similarity(batch_query_emb, passage_embeddings)
 
-        _, top_indices = torch.topk(scores, k=min(top_k, scores.shape[1]), dim=1)
+        top_scores = torch.full((num_queries_in_batch, top_k), float("-inf"))
+        top_indices = torch.zeros((num_queries_in_batch, top_k), dtype=torch.long)
 
-        for i in range(batch_end - batch_start):
-            qid = query_ids[batch_start + i]
+        for p_start in range(0, num_passages, passage_batch_size):
+            p_end = min(p_start + passage_batch_size, num_passages)
+            passage_chunk = passage_texts[p_start:p_end]
+
+            passage_chunk_emb = model.encode_document(passage_chunk)
+            chunk_scores = model.similarity(batch_query_emb, passage_chunk_emb)
+
+            chunk_k = min(top_k, chunk_scores.shape[1])
+            chunk_top_scores, chunk_top_idx = torch.topk(chunk_scores, k=chunk_k, dim=1)
+            chunk_top_idx += p_start
+
+            combined_scores = torch.cat([top_scores, chunk_top_scores], dim=1)
+            combined_indices = torch.cat([top_indices, chunk_top_idx], dim=1)
+            final_k = min(top_k, combined_scores.shape[1])
+            best_scores, best_pos = torch.topk(combined_scores, k=final_k, dim=1)
+            top_scores = best_scores
+            top_indices = combined_indices.gather(1, best_pos)
+
+        for i in range(num_queries_in_batch):
+            qid = query_ids[q_start + i]
             positive_pids = set(positives.get(qid, []))
 
             negatives = []
-            for idx in top_indices[i].tolist():
-                pid = passage_ids[idx]
+            for j in range(top_k):
+                pid = passage_ids[top_indices[i, j].item()]
                 if pid not in positive_pids:
                     negatives.append(
-                        {"pid": pid, "score": scores[i, idx].item(), "text": all_passages[pid]}
+                        {"pid": pid, "score": top_scores[i, j].item(), "text": all_passages[pid]}
                     )
                     if len(negatives) >= num_hard_negatives:
                         break
@@ -110,7 +128,7 @@ def mine_hard_negatives(
                 "hard_negatives": negatives,
             }
 
-        print(f"  Processed {batch_end}/{len(query_ids)} queries")
+        print(f"  Processed queries {q_start}-{q_end}/{len(query_ids)}")
 
     return hard_negatives
 
