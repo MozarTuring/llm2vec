@@ -42,4 +42,3 @@ echo $PWD
 #     --model_name_or_path meta-llama/Meta-Llama-3.1-8B \
 #     --dataset_name Tevatron/msmarco-passage-corpus
 
-JWM_RUN_COMMAND="python experiments/hard_negatives.py"
