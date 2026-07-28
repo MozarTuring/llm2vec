@@ -1,27 +1,10 @@
-export JWM_SERVER_NAME=
-export JWM_MODULES="Miniforge3 buildenv-gcccuda/12.4.1-gcc13.3.0"
+export JWM_NOTEBOOK=1
+export JWM_SERVER_NAME=greatrawr
 export JWM_CONDAENV="${RUN_DIR_HOME}/conda_envs/llm2vec"
 export JWM_GPU_NUM=
 export JWM_NODES_NUM=
 export JWM_RUN_TIME=
 export JWM_build_flashattn=
-export JWM_SLURM_RUN_COMMAND=
-export JWM_SLURM_RUN_ARGS=
-if [[ ${JWM_SLURM_RUN_ARGS} == *"MetaLlama3"* ]]; then
-
-    export JWM_SLURM_NODES="--nodelist=node[061-064,065,066-093]"
-fi
-if [[ -n ${JWM_build_flashattn} ]]; then
-    export CPUS_PER_TASK=32
-    export MEM_PER_TASK="256G"
-else
-    export CPUS_PER_TASK=$((8 * JWM_GPU_NUM))
-    export MEM_PER_TASK="$((24 * JWM_GPU_NUM))G"
-fi
-export JWM_SLURM_FILE=
-
-module --force purge
-module load ${JWM_MODULES}
 
 if [ ! -d ${JWM_CONDAENV} ]; then
 
@@ -33,10 +16,10 @@ which python
 echo $PWD
 
 # pip install -e .
-# pip install torch --force-reinstall --index-url https://download.pytorch.org/whl/cu124
+# pip install torch --force-reinstall --index-url https://download.pytorch.org/whl/cu128
 # pip install ninja
 # pip uninstall -y flash-attn 2>/dev/null
-mkdir -p ${JWM_CONDAENV}/flash_attn_src
+# mkdir -p ${JWM_CONDAENV}/flash_attn_src
 # python -c "
 # import json, urllib.request, os
 # dest = os.environ['JWM_CONDAENV'] + '/flash_attn_src/flash_attn-2.8.3.post1.tar.gz'
@@ -50,22 +33,14 @@ mkdir -p ${JWM_CONDAENV}/flash_attn_src
 #     print('Source tarball already exists')
 # "
 
-# python << 'EOF'
-# from datasets import load_dataset
-# dataset = load_dataset("microsoft/ms_marco", "v1.1", split="train")
-# EOF
-
 # pip install peft==0.12.0
 # pip install datasets==3.6.0
 # pip install seqeval
 # pip install jupyterlab
 # pip install sentence_transformers
-# python << 'EOF'
-# from sentence_transformers import SparseEncoder
-# model = SparseEncoder("naver/splade-cocondenser-selfdistil")
-# EOF
-
 
 # python experiments/download_model.py \
 #     --model_name_or_path meta-llama/Meta-Llama-3.1-8B \
 #     --dataset_name Tevatron/msmarco-passage-corpus
+
+JWM_RUN_COMMAND="python experiments/hard_negatives.py"

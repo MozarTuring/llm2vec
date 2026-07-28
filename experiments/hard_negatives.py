@@ -50,14 +50,14 @@ def encode_in_batches(model, texts, batch_size=64, is_query=True):
     for start in range(0, len(texts), batch_size):
         batch = texts[start : start + batch_size]
         if is_query:
-            emb = model.encode_query(batch, convert_to_sparse_tensor=True)
+            emb = model.encode_query(batch)
         else:
-            emb = model.encode_document(batch, convert_to_sparse_tensor=True)
+            emb = model.encode_document(batch)
         all_embeddings.append(emb)
         if (start // batch_size) % 10 == 0:
             print(f"  Encoded {start + len(batch)}/{len(texts)}")
 
-    return torch.cat([e.to_dense() for e in all_embeddings], dim=0).to_sparse()
+    return torch.cat(all_embeddings, dim=0)
 
 
 def mine_hard_negatives(
@@ -81,18 +81,15 @@ def mine_hard_negatives(
     )
 
     print("\nComputing similarity scores and mining hard negatives...")
-    query_dense = query_embeddings.to_dense()
-    passage_dense = passage_embeddings.to_dense()
 
     hard_negatives = {}
     batch_size = 100
 
     for batch_start in range(0, len(query_ids), batch_size):
         batch_end = min(batch_start + batch_size, len(query_ids))
-        batch_query_emb = query_dense[batch_start:batch_end]
+        batch_query_emb = query_embeddings[batch_start:batch_end]
 
-        # dot-product similarity (SPLADE uses dot product)
-        scores = torch.matmul(batch_query_emb, passage_dense.T)
+        scores = model.similarity(batch_query_emb, passage_embeddings)
 
         _, top_indices = torch.topk(scores, k=min(top_k, scores.shape[1]), dim=1)
 
