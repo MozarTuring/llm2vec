@@ -13,7 +13,7 @@ def main():
     with open(args.hard_negatives_file) as f:
         hard_negatives = json.load(f)
 
-    model = CrossEncoder("naver/trecdl22-crossencoder-debertav3")
+    model = CrossEncoder("naver/trecdl22-crossencoder-debertav3", trust_remote_code=True)
 
     results = {}
     for idx, (qid, data) in enumerate(hard_negatives.items()):

@@ -34,6 +34,7 @@ fi
 
 
 export JWM_NOTEBOOK=
+export JWM_RUN_COMMAND="python experiments/reranker.py msmarco_hard_negatives.json --output reranked_hard_negatives.json --top_k 8"
 export JWM_SERVER_NAME=greatrawr
 export JWM_CONDAENV="${RUN_DIR_HOME}/conda_envs/llm2vec"
 export JWM_GPU_NUM=
@@ -78,7 +79,6 @@ echo $PWD
 #     --model_name_or_path meta-llama/Meta-Llama-3.1-8B \
 #     --dataset_name Tevatron/msmarco-passage-corpus
 
-JWM_RUN_COMMAND="python experiments/hard_negatives.py"
 echo ${PWD}
 JWM_RUN_COMMAND="${JWM_RUN_COMMAND_PRE} ${JWM_RUN_COMMAND}"
 
