@@ -97,7 +97,8 @@ def mine_hard_negatives(
 
             chunk_k = min(top_k, chunk_scores.shape[1])
             chunk_top_scores, chunk_top_idx = torch.topk(chunk_scores, k=chunk_k, dim=1)
-            chunk_top_idx += p_start
+            chunk_top_scores = chunk_top_scores.cpu()
+            chunk_top_idx = chunk_top_idx.cpu() + p_start
 
             combined_scores = torch.cat([top_scores, chunk_top_scores], dim=1)
             combined_indices = torch.cat([top_indices, chunk_top_idx], dim=1)

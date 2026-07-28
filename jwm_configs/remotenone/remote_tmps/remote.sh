@@ -33,7 +33,7 @@ if [ -n ${JWM_ENVS} ]; then
 fi
 
 
-export JWM_NOTEBOOK=1
+export JWM_NOTEBOOK=
 export JWM_SERVER_NAME=greatrawr
 export JWM_CONDAENV="${RUN_DIR_HOME}/conda_envs/llm2vec"
 export JWM_GPU_NUM=
