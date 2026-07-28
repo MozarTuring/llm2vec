@@ -1,3 +1,4 @@
+import os
 import torch
 import json
 from datasets import load_dataset
@@ -44,25 +45,36 @@ def load_msmarco_data(num_queries=500, num_passages=50000):
     return queries, positives, all_passages
 
 
-def encode_in_batches(model, texts, batch_size=64, is_query=True):
-    """Encode texts in batches to avoid OOM."""
-    all_embeddings = []
-    for start in range(0, len(texts), batch_size):
-        batch = texts[start : start + batch_size]
-        if is_query:
-            emb = model.encode_query(batch)
-        else:
-            emb = model.encode_document(batch)
-        all_embeddings.append(emb)
-        if (start // batch_size) % 10 == 0:
-            print(f"  Encoded {start + len(batch)}/{len(texts)}")
+def encode_passages_to_disk(model, passage_texts, cache_dir, chunk_size=50000):
+    """Encode all passages in chunks and save each chunk to disk."""
+    os.makedirs(cache_dir, exist_ok=True)
+    num_chunks = (len(passage_texts) + chunk_size - 1) // chunk_size
 
-    return torch.cat(all_embeddings, dim=0)
+    for chunk_idx in range(num_chunks):
+        chunk_path = os.path.join(cache_dir, f"chunk_{chunk_idx}.pt")
+        if os.path.exists(chunk_path):
+            print(f"  Chunk {chunk_idx}/{num_chunks} already cached, skipping")
+            continue
+
+        p_start = chunk_idx * chunk_size
+        p_end = min(p_start + chunk_size, len(passage_texts))
+        chunk_texts = passage_texts[p_start:p_end]
+
+        embeddings = []
+        batch = chunk_texts[ : chunk_size]
+        emb = model.encode_document(batch)
+        embeddings.append(emb.cpu())
+
+        chunk_emb = torch.cat(embeddings, dim=0)
+        torch.save(chunk_emb, chunk_path)
+        print(f"  Chunk {chunk_idx}/{num_chunks}: encoded {p_end - p_start} passages, saved to {chunk_path}")
+
+    return num_chunks
 
 
 def mine_hard_negatives(
-    model, queries, positives, all_passages, top_k=30, num_hard_negatives=10,
-    query_batch_size=256, passage_batch_size=300000,
+    model, queries, positives, all_passages, cache_dir,
+    top_k=30, num_hard_negatives=10, query_batch_size=256, passage_chunk_size=10000,
 ):
     """
     Mine hard negatives: passages that score highly with the query
@@ -71,31 +83,29 @@ def mine_hard_negatives(
     query_ids = list(queries.keys())
     query_texts = [queries[qid] for qid in query_ids]
     passage_ids = list(all_passages.keys())
-    passage_texts = [all_passages[pid] for pid in passage_ids]
-    num_passages = len(passage_texts)
+    num_passages = len(passage_ids)
+    num_chunks = (num_passages + passage_chunk_size - 1) // passage_chunk_size
 
     print(f"\nMining hard negatives for {len(query_texts)} queries against {num_passages} passages...")
 
     hard_negatives = {}
 
     for q_start in range(0, len(query_ids), query_batch_size):
-        print(f"query {q_start}")
         q_end = min(q_start + query_batch_size, len(query_ids))
         batch_query_texts = query_texts[q_start:q_end]
         num_queries_in_batch = q_end - q_start
 
         batch_query_emb = model.encode_query(batch_query_texts)
-
         device = batch_query_emb.device
+
         top_scores = torch.full((num_queries_in_batch, top_k), float("-inf"), device=device)
         top_indices = torch.zeros((num_queries_in_batch, top_k), dtype=torch.long, device=device)
 
-        for p_start in range(0, num_passages, passage_batch_size):
-            print(f"passages {p_start}")
-            p_end = min(p_start + passage_batch_size, num_passages)
-            passage_chunk = passage_texts[p_start:p_end]
+        for chunk_idx in range(num_chunks):
+            chunk_path = os.path.join(cache_dir, f"chunk_{chunk_idx}.pt")
+            passage_chunk_emb = torch.load(chunk_path, weights_only=True).to(device)
+            p_start = chunk_idx * passage_chunk_size
 
-            passage_chunk_emb = model.encode_document(passage_chunk)
             chunk_scores = model.similarity(batch_query_emb, passage_chunk_emb)
 
             chunk_k = min(top_k, chunk_scores.shape[1])
@@ -108,6 +118,9 @@ def mine_hard_negatives(
             best_scores, best_pos = torch.topk(combined_scores, k=final_k, dim=1)
             top_scores = best_scores
             top_indices = combined_indices.gather(1, best_pos)
+
+            del passage_chunk_emb, chunk_scores
+            torch.cuda.empty_cache()
 
         top_scores = top_scores.cpu()
         top_indices = top_indices.cpu()
@@ -147,13 +160,22 @@ def main():
         num_queries=500, num_passages=50000
     )
 
+    passage_texts = list(all_passages.values())
+    cache_dir = "passage_embeddings_cache"
+    passage_chunk_size = 10000
+
+    print(f"\nEncoding {len(passage_texts)} passages to disk...")
+    encode_passages_to_disk(model, passage_texts, cache_dir, chunk_size=passage_chunk_size)
+
     hard_negatives = mine_hard_negatives(
         model,
         queries,
         positives,
         all_passages,
+        cache_dir,
         top_k=30,
         num_hard_negatives=10,
+        passage_chunk_size=passage_chunk_size,
     )
 
     # Save results
