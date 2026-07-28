@@ -33,7 +33,7 @@ if [ -n ${JWM_ENVS} ]; then
 fi
 
 
-export JWM_NOTEBOOK=
+export JWM_NOTEBOOK=1
 export JWM_SERVER_NAME=greatrawr
 export JWM_CONDAENV="${RUN_DIR_HOME}/conda_envs/llm2vec"
 export JWM_GPU_NUM=
@@ -51,7 +51,7 @@ which python
 echo $PWD
 
 # pip install -e .
-pip install torch --force-reinstall --index-url https://download.pytorch.org/whl/cu128
+# pip install torch --force-reinstall --index-url https://download.pytorch.org/whl/cu128
 # pip install ninja
 # pip uninstall -y flash-attn 2>/dev/null
 # mkdir -p ${JWM_CONDAENV}/flash_attn_src
@@ -72,7 +72,7 @@ pip install torch --force-reinstall --index-url https://download.pytorch.org/whl
 # pip install datasets==3.6.0
 # pip install seqeval
 # pip install jupyterlab
-pip install sentence_transformers
+# pip install sentence_transformers
 
 # python experiments/download_model.py \
 #     --model_name_or_path meta-llama/Meta-Llama-3.1-8B \

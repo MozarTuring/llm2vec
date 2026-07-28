@@ -73,11 +73,12 @@ def mine_hard_negatives(
     passage_texts = [all_passages[pid] for pid in passage_ids]
 
     print(f"\nEncoding {len(query_texts)} queries...")
-    query_embeddings = encode_in_batches(model, query_texts, batch_size=64, is_query=True)
+    batch_size=256
+    query_embeddings = encode_in_batches(model, query_texts[:2], batch_size=batch_size, is_query=True)
 
     print(f"Encoding {len(passage_texts)} passages...")
     passage_embeddings = encode_in_batches(
-        model, passage_texts, batch_size=64, is_query=False
+        model, passage_texts[:10], batch_size=batch_size, is_query=False
     )
 
     print("\nComputing similarity scores and mining hard negatives...")
