@@ -162,7 +162,7 @@ def main():
 
     passage_texts = list(all_passages.values())
     cache_dir = "passage_embeddings_cache"
-    passage_chunk_size = 10000
+    passage_chunk_size = 50000
 
     print(f"\nEncoding {len(passage_texts)} passages to disk...")
     encode_passages_to_disk(model, passage_texts, cache_dir, chunk_size=passage_chunk_size)
