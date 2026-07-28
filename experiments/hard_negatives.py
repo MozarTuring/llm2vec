@@ -79,16 +79,19 @@ def mine_hard_negatives(
     hard_negatives = {}
 
     for q_start in range(0, len(query_ids), query_batch_size):
+        print(f"query {q_start}")
         q_end = min(q_start + query_batch_size, len(query_ids))
         batch_query_texts = query_texts[q_start:q_end]
         num_queries_in_batch = q_end - q_start
 
         batch_query_emb = model.encode_query(batch_query_texts)
 
-        top_scores = torch.full((num_queries_in_batch, top_k), float("-inf"))
-        top_indices = torch.zeros((num_queries_in_batch, top_k), dtype=torch.long)
+        device = batch_query_emb.device
+        top_scores = torch.full((num_queries_in_batch, top_k), float("-inf"), device=device)
+        top_indices = torch.zeros((num_queries_in_batch, top_k), dtype=torch.long, device=device)
 
         for p_start in range(0, num_passages, passage_batch_size):
+            print(f"passages {p_start}")
             p_end = min(p_start + passage_batch_size, num_passages)
             passage_chunk = passage_texts[p_start:p_end]
 
@@ -97,8 +100,7 @@ def mine_hard_negatives(
 
             chunk_k = min(top_k, chunk_scores.shape[1])
             chunk_top_scores, chunk_top_idx = torch.topk(chunk_scores, k=chunk_k, dim=1)
-            chunk_top_scores = chunk_top_scores.cpu()
-            chunk_top_idx = chunk_top_idx.cpu() + p_start
+            chunk_top_idx += p_start
 
             combined_scores = torch.cat([top_scores, chunk_top_scores], dim=1)
             combined_indices = torch.cat([top_indices, chunk_top_idx], dim=1)
@@ -106,6 +108,9 @@ def mine_hard_negatives(
             best_scores, best_pos = torch.topk(combined_scores, k=final_k, dim=1)
             top_scores = best_scores
             top_indices = combined_indices.gather(1, best_pos)
+
+        top_scores = top_scores.cpu()
+        top_indices = top_indices.cpu()
 
         for i in range(num_queries_in_batch):
             qid = query_ids[q_start + i]
