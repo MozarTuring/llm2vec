@@ -2,7 +2,7 @@ import json
 import argparse
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
-
+from transformers import AutoConfig
 
 def main():
     parser = argparse.ArgumentParser()
@@ -21,7 +21,8 @@ def main():
     model.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
-
+    c = AutoConfig.from_pretrained(model_name)
+    print(c.max_position_embeddings)
     results = {}
     for idx, (qid, data) in enumerate(hard_negatives.items()):
         query = data["query"]

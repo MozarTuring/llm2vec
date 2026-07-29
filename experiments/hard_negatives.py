@@ -39,8 +39,7 @@ def load_msmarco_data(num_queries=500, num_passages=50000):
                 positives[query_id].append(pid)
 
     # Keep only queries that have at least one positive
-    queries = {qid: q for qid, q in queries.items() if qid in positives}
-
+    
     print(f"Loaded {len(queries)} queries with positives, {len(all_passages)} passages")
     return queries, positives, all_passages
 
