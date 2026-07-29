@@ -33,7 +33,7 @@ if [ -n ${JWM_ENVS} ]; then
 fi
 
 
-export JWM_NOTEBOOK=
+export JWM_NOTEBOOK=1
 export JWM_RUN_COMMAND="python experiments/reranker.py msmarco_hard_negatives.json --output reranked_hard_negatives.json --top_k 8"
 export JWM_SERVER_NAME=greatrawr
 export JWM_CONDAENV="${RUN_DIR_HOME}/conda_envs/llm2vec"

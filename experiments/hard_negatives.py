@@ -23,9 +23,6 @@ def load_msmarco_data(num_queries=500, num_passages=50000):
         query = example["query"]
         query_id = str(i)
 
-        if query_id in queries:
-            continue
-
         queries[query_id] = query
 
         for j, (passage_text, is_selected) in enumerate(
@@ -159,7 +156,11 @@ def main():
         num_queries=500, num_passages=50000
     )
 
-    passage_texts = list(all_passages.values())
+    passage_texts = list(set(list(all_passages.values())))
+    all_passages = dict()
+    for pid, p in enumerate(passage_texts):
+        all_passages[f"p_{pid}"] = p
+
     cache_dir = "passage_embeddings_cache"
     passage_chunk_size = 50000
 

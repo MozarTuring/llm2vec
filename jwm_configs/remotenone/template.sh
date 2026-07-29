@@ -38,7 +38,7 @@ echo $PWD
 # pip install jupyterlab
 # pip install sentence_transformers
 # pip install sentencepiece
-pip install protobuf
+# pip install protobuf
 #
 #
 # python experiments/download_model.py \
