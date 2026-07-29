@@ -29,7 +29,7 @@ def main():
 
     pct = has_harder_negative / total * 100 if total else 0
     print(f"Total queries: {total}")
-    print(f"Queries with a hard negative scoring higher than the best positive: {has_harder_negative} ({pct:.1f}%)")
+    print(f"Queries with a hard negative scoring higher than any positive: {has_harder_negative} ({pct:.1f}%)")
 
 
 if __name__ == "__main__":
