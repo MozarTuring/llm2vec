@@ -4,7 +4,7 @@
     "sae_weights_path": "/home/jinma/project_remote_jwm/remote_data/splare/Llama3_1-8B-Base-L0R-8x/checkpoints/final.safetensors",
     "torch_dtype": "bfloat16",
     "attn_implementation": "flash_attention_2",
-    "hard_negatives_file": "msmarco_hard_negatives.json",
+    "hard_negatives_file": "reranked_hard_negatives.json",
     "num_hard_negatives": 8,
     "max_seq_length": 512,
     "lora_r": 16,
