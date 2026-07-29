@@ -6,7 +6,7 @@ from sentence_transformers import SparseEncoder
 from collections import defaultdict
 
 
-def load_msmarco_data(num_queries=500, num_passages=50000):
+def load_msmarco_data():
     """Load a subset of MS MARCO for hard negative mining."""
     print("Loading MS MARCO dataset...")
     dataset = load_dataset("microsoft/ms_marco", "v1.1", split="train")
@@ -14,30 +14,36 @@ def load_msmarco_data(num_queries=500, num_passages=50000):
     queries = {}
     positives = defaultdict(list)
     all_passages = {}
+    seen_queries = {}
+    seen_passages = {}
     passage_id = 0
 
     for i, example in enumerate(dataset):
-        # if len(queries) >= num_queries:
-        #     break
-
         query = example["query"]
         query_id = str(i)
 
+        if query in seen_queries:
+            continue
+        seen_queries[query] = query_id
         queries[query_id] = query
 
         for j, (passage_text, is_selected) in enumerate(
             zip(example["passages"]["passage_text"], example["passages"]["is_selected"])
         ):
-            pid = f"p_{passage_id}"
-            all_passages[pid] = passage_text
-            passage_id += 1
+            if passage_text in seen_passages:
+                pid = seen_passages[passage_text]
+            else:
+                pid = f"p_{passage_id}"
+                seen_passages[passage_text] = pid
+                all_passages[pid] = passage_text
+                passage_id += 1
 
             if is_selected == 1:
                 positives[query_id].append(pid)
 
-    # Keep only queries that have at least one positive
-    
-    print(f"Loaded {len(queries)} queries with positives, {len(all_passages)} passages")
+    queries = {qid: q for qid, q in queries.items() if qid in positives}
+
+    print(f"Loaded {len(queries)} queries with positives, {len(all_passages)} unique passages")
     return queries, positives, all_passages
 
 
@@ -152,15 +158,9 @@ def main():
     print("Loading SPLADE CoCondenser SelfDistil model...")
     model = SparseEncoder("naver/splade-cocondenser-selfdistil")
 
-    queries, positives, all_passages = load_msmarco_data(
-        num_queries=500, num_passages=50000
-    )
+    queries, positives, all_passages = load_msmarco_data()
 
-    passage_texts = list(set(list(all_passages.values())))
-    all_passages = dict()
-    for pid, p in enumerate(passage_texts):
-        all_passages[f"p_{pid}"] = p
-
+    passage_texts = list(all_passages.values())
     cache_dir = "passage_embeddings_cache"
     passage_chunk_size = 50000
 

@@ -11,3 +11,5 @@ output/
 cluster_scripts/****/zzzjwmresources
 .DS_Store
 **/zzzjwmresources
+**/*.ipynb
+**/*.md
