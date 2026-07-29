@@ -33,7 +33,7 @@ if [ -n ${JWM_ENVS} ]; then
 fi
 
 
-export JWM_NOTEBOOK=
+export JWM_NOTEBOOK=1
 export JWM_RUN_COMMAND="python experiments/run_layerwise_finetune.py train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json"
 export JWM_SERVER_NAME=greatrawr
 export JWM_CONDAENV="${RUN_DIR_HOME}/conda_envs/llm2vec"
@@ -69,15 +69,14 @@ echo $PWD
 #     print('Source tarball already exists')
 # "
 
-# pip install peft==0.12.0
 # pip install datasets==3.6.0
 # pip install seqeval
 # pip install jupyterlab
 # pip install sentence_transformers
 # pip install sentencepiece
 # pip install protobuf
-pip install flash-attn --no-build-isolation
 #
+pip install peft==0.12.0
 #
 # python experiments/download_model.py \
 #     --model_name_or_path meta-llama/Meta-Llama-3.1-8B \

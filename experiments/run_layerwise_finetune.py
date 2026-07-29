@@ -522,7 +522,7 @@ def main():
     with safe_open(model_args.sae_weights_path, framework="pt") as f:
         encoder_weight = f.get_tensor("encoder.weight")  # Shape: [32768, 4096]
         encoder_bias = f.get_tensor("encoder.bias")       # Shape: [32768]
-    sae = nn.Linear(32768,4096)
+    sae = nn.Linear(4096, 32768)
     with torch.no_grad():
         sae.weight.copy_(encoder_weight)
         sae.bias.copy_(encoder_bias)
