@@ -32,7 +32,8 @@ def main():
             results[qid] = data
             continue
 
-        pairs = [(query, neg["text"]) for neg in negatives]
+        positives = data["positives"]
+        pairs = [(query, pos["text"]) for pos in positives] + [(query, neg["text"]) for neg in negatives]
 
         all_scores = []
         for start in range(0, len(pairs), args.batch_size):
@@ -42,7 +43,10 @@ def main():
                 logits = model(**inputs).logits.squeeze(-1)
             all_scores.extend(logits.cpu().tolist())
 
-        for neg, score in zip(negatives, all_scores):
+        for pos, score in zip(positives, all_scores[:len(positives)]):
+            pos["reranker_score"] = float(score)
+
+        for neg, score in zip(negatives, all_scores[len(positives):]):
             del neg["score"]
             neg["reranker_score"] = float(score)
 
@@ -50,7 +54,7 @@ def main():
 
         results[qid] = {
             "query": query,
-            "positives": data["positives"],
+            "positives": positives,
             "hard_negatives": negatives,
         }
 
