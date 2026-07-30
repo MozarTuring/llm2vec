@@ -326,6 +326,7 @@ class StopTrainingCallback(TrainerCallback):
 class LayerwiseTrainer(Trainer):
 
     def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
+        print("329 shape,", inputs[0]['input_ids'].shape)
         output = model(inputs)
         loss = output[0] if isinstance(output, (tuple, list)) else output
         return (loss, output) if return_outputs else loss
