@@ -33,6 +33,7 @@ if [ -n ${JWM_ENVS} ]; then
 fi
 
 
+export CUDA_VISIBLE_DEVICES=0
 export JWM_NOTEBOOK=1
 export JWM_RUN_COMMAND="python experiments/run_layerwise_finetune.py train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json"
 export JWM_SERVER_NAME=greatrawr
@@ -76,7 +77,7 @@ echo $PWD
 # pip install sentencepiece
 # pip install protobuf
 #
-pip install peft==0.12.0
+# pip install peft==0.12.0
 #
 # python experiments/download_model.py \
 #     --model_name_or_path meta-llama/Meta-Llama-3.1-8B \
@@ -92,8 +93,8 @@ kill $(pgrep -f "port=18889") || echo "18889 port free"
 sleep 5
 
 if [[ ${JWM_NOTEBOOK} == 1 ]]; then
-    JWM_RUN_COMMAND="jupyter labextension disable '@jupyterlab/apputils-extension:announcements' && jupyter lab --MappingKernelManager.cull_idle_timeout=3600 --MappingKernelManager.cull_interval=360 --MappingKernelManager.cull_connected=True --ip=0.0.0.0 --port=18889 --no-browser --allow-root --NotebookApp.token=''"
+    JWM_RUN_COMMAND="jupyter labextension disable '@jupyterlab/apputils-extension:announcements' && CUDA_VISIBLE_DEVICES='${CUDA_VISIBLE_DEVICES}' jupyter lab --MappingKernelManager.cull_idle_timeout=3600 --MappingKernelManager.cull_interval=360 --MappingKernelManager.cull_connected=True --ip=0.0.0.0 --port=18889 --no-browser --allow-root --NotebookApp.token=''"
 fi
-nohup bash -c "${JWM_RUN_COMMAND}" > jwmlogs/${JWM_RUN_START_TIME}/job_out.log 2>&1 &
+nohup bash -c "CUDA_VISIBLE_DEVICES='${CUDA_VISIBLE_DEVICES}' ${JWM_RUN_COMMAND}" > jwmlogs/${JWM_RUN_START_TIME}/job_out.log 2>&1 &
 
 export JWM_JOB_ID=$!

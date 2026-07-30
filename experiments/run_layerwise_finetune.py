@@ -526,6 +526,7 @@ def main():
     with torch.no_grad():
         sae.weight.copy_(encoder_weight)
         sae.bias.copy_(encoder_bias)
+    sae.to(torch_dtype)
     task_head = TaskHead(hidden_size)
 
     layerwise_model = LayerwiseModel(

@@ -1,3 +1,4 @@
+export CUDA_VISIBLE_DEVICES=0
 export JWM_NOTEBOOK=1
 export JWM_RUN_COMMAND="python experiments/run_layerwise_finetune.py train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json"
 export JWM_SERVER_NAME=greatrawr
@@ -41,7 +42,7 @@ echo $PWD
 # pip install sentencepiece
 # pip install protobuf
 #
-pip install peft==0.12.0
+# pip install peft==0.12.0
 #
 # python experiments/download_model.py \
 #     --model_name_or_path meta-llama/Meta-Llama-3.1-8B \
