@@ -92,7 +92,7 @@ class TaskHead(nn.Module):
         super().__init__()
         self.hidden_size = hidden_size
 
-    def forward(self, encoded_groups: List[torch.Tensor]) -> torch.Tensor:
+    def forward(self, pred_probs: torch.Tensor, target_probs: torch.Tensor) -> torch.Tensor:
         raise NotImplementedError("Implement TaskHead.forward()")
 
 
@@ -123,26 +123,54 @@ class LayerwiseModel(nn.Module):
     forward() — all 10 text groups → norm → SAE → task head → loss
     """
 
-    def __init__(self, config, backbone, sae, task_head):
+    def __init__(self, config, backbone, sae, task_head, temperature, lambda_q, lambda_d):
         super().__init__()
         self.config = config
         self.backbone = backbone
         self.pre_sae_norm = SqrtDNorm()
         self.sae = sae
         self.task_head = task_head
+        self.temperature = temperature
+        self.lambda_q = lambda_q
+        self.lambda_d = lambda_d
 
-    def encode(self, sentence_feature: Dict[str, torch.Tensor]) -> torch.Tensor:
+    def encode(self, sentence_feature: Dict[str, torch.Tensor]):
         outputs = self.backbone(
             input_ids=sentence_feature["input_ids"],
             attention_mask=sentence_feature["attention_mask"],
         )
         hidden_states = outputs[0]
         hidden_states = self.pre_sae_norm(hidden_states)
-        return self.sae(hidden_states)
+        sae_out = self.sae(hidden_states)
+        sae_out = torch.log(1 + torch.relu(sae_out))
+        pooled, _ = sae_out.max(dim=1)
+        return pooled, sae_out
 
-    def forward(self, features: List[Dict[str, torch.Tensor]]):
-        encoded = [self.encode(f) for f in features]
-        loss = self.task_head(encoded)
+    @staticmethod
+    def flops_loss(sae_out):
+        return torch.sum(sae_out.mean(dim=0) ** 2)
+
+    def forward(self, features: List[Dict[str, torch.Tensor]], reranker_scores: torch.Tensor):
+        results = [self.encode(f) for f in features]
+        pooled = [r[0] for r in results]
+        sae_outs = [r[1] for r in results]
+
+        query = pooled[0]
+        positive = pooled[1]
+        negatives = pooled[2:]
+
+        pos_score = (query * positive).sum(dim=-1, keepdim=True)
+        neg_scores = torch.stack([(query * neg).sum(dim=-1) for neg in negatives], dim=1)
+        scores = torch.cat([pos_score, neg_scores], dim=1)
+
+        log_pred = torch.log_softmax(scores / self.temperature, dim=1)
+        target_probs = torch.softmax(reranker_scores.to(scores.device), dim=1)
+        kl_loss = nn.functional.kl_div(log_pred, target_probs, reduction="batchmean")
+
+        query_flops = self.flops_loss(pooled[0])
+        doc_flops = sum(self.flops_loss(p) for p in pooled[1:]) / len(pooled[1:])
+
+        loss = kl_loss + self.lambda_q * query_flops + self.lambda_d * doc_flops
         return (loss,)
 
     def save_peft_model(self, path):
@@ -166,8 +194,9 @@ class LayerwiseModel(nn.Module):
 class TrainSample:
     """One training example with multiple texts."""
 
-    def __init__(self, texts: List[str], label: float = 1.0):
+    def __init__(self, texts: List[str], reranker_scores: List[float] = None, label: float = 1.0):
         self.texts = texts
+        self.reranker_scores = reranker_scores
         self.label = label
 
 
@@ -197,12 +226,15 @@ class MSMARCOHardNegDataset(torch.utils.data.Dataset):
                 skipped += 1
                 continue
             query = item["query"]
-            positive = item["positives"][0]["text"]
-            negs = [n["text"] for n in item["hard_negatives"][:num_hard_negatives]]
+            pos = item["positives"][0]
+            positive = pos["text"]
+            neg_items = item["hard_negatives"][:num_hard_negatives]
+            negs = [n["text"] for n in neg_items]
             if len(negs) < num_hard_negatives:
                 skipped += 1
                 continue
-            self.samples.append((query, positive, negs))
+            reranker_scores = [pos["reranker_score"]] + [n["reranker_score"] for n in neg_items]
+            self.samples.append((query, positive, negs, reranker_scores))
 
         print(
             f"Loaded {len(self.samples)} training samples from {file_path} "
@@ -213,9 +245,9 @@ class MSMARCOHardNegDataset(torch.utils.data.Dataset):
         return len(self.samples)
 
     def __getitem__(self, idx):
-        query, positive, negs = self.samples[idx]
+        query, positive, negs, reranker_scores = self.samples[idx]
         texts = [query, positive] + negs
-        return TrainSample(texts=texts)
+        return TrainSample(texts=texts, reranker_scores=reranker_scores)
 
 
 class ContrastiveCollator:
@@ -249,7 +281,8 @@ class ContrastiveCollator:
             )
             tokenized_groups.append(tokenized)
 
-        return tokenized_groups
+        reranker_scores = torch.tensor([s.reranker_scores for s in features])
+        return {"features": tokenized_groups, "reranker_scores": reranker_scores}
 
 
 # ═════════════════════════════════════════════════════════════════
@@ -326,8 +359,9 @@ class StopTrainingCallback(TrainerCallback):
 class LayerwiseTrainer(Trainer):
 
     def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
-        print("329 shape,", inputs[0]['input_ids'].shape)
-        output = model(inputs)
+        features = inputs["features"]
+        reranker_scores = inputs["reranker_scores"]
+        output = model(features, reranker_scores)
         loss = output[0] if isinstance(output, (tuple, list)) else output
         return (loss, output) if return_outputs else loss
 
@@ -411,6 +445,9 @@ class CustomArguments:
     stop_after_n_steps: int = field(
         default=10000, metadata={"help": "Stop training after n steps."}
     )
+    temperature: float = field(metadata={"help": "Temperature for softmax on predicted scores."})
+    lambda_q: float = field(metadata={"help": "FLOPS regularization weight for queries."})
+    lambda_d: float = field(metadata={"help": "FLOPS regularization weight for documents."})
 
 
 # ═════════════════════════════════════════════════════════════════
@@ -528,6 +565,7 @@ def main():
         sae.weight.copy_(encoder_weight)
         sae.bias.copy_(encoder_bias)
     sae.to(torch_dtype)
+    sae.requires_grad_(False)
     task_head = TaskHead(hidden_size)
 
     layerwise_model = LayerwiseModel(
@@ -535,6 +573,9 @@ def main():
         backbone=model,
         sae=sae,
         task_head=task_head,
+        temperature=custom_args.temperature,
+        lambda_q=custom_args.lambda_q,
+        lambda_d=custom_args.lambda_d,
     )
 
     print(f"\nLayerwiseModel ready:")

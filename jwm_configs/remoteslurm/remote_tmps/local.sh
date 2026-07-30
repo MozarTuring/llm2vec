@@ -1,13 +1,13 @@
 export JWM_NOTEBOOK=1
 export JWM_SERVER_NAME=berzeliusampere
 export JWM_MODULES="Miniforge3 buildenv-gcccuda/12.4.1-gcc13.3.0"
-export JWM_CONDAENV="/proj/berzelius-aiics-real/users/x_jinma/conda_envs/llm2vec"
+export JWM_CONDAENV="${RUN_DIR_HOME}/conda_envs/llm2vec"
 export JWM_GPU_NUM=1
 export JWM_NODES_NUM=1
 export JWM_RUN_TIME="1-00:00:00"
 export JWM_build_flashattn=
-export JWM_SLURM_RUN_COMMAND="python experiments/run_layerwise_finetune.py"
-export JWM_SLURM_RUN_ARGS="train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json"
+export JWM_SLURM_RUN_COMMAND="python experiments/run_layerwise_finetune.py train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json"
+export JWM_SLURM_RUN_ARGS=
 if [[ ${JWM_SLURM_RUN_ARGS} == *"MetaLlama3"* ]]; then
 
     export JWM_SLURM_NODES="--nodelist=node[061-064,065,066-093]"

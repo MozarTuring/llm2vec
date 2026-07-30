@@ -7,6 +7,5 @@ JWM_build_flashattn=
 JWM_NOTEBOOK=1
 
 
-JWM_SLURM_RUN_COMMAND="python experiments/run_layerwise_finetune.py"
+JWM_SLURM_RUN_COMMAND="python experiments/run_layerwise_finetune.py train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json"
 
-JWM_SLURM_RUN_ARGS="train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json"
