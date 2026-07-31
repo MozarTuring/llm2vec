@@ -111,8 +111,23 @@ class MTEBWrapper:
     def __init__(self, encoder):
         self.encoder = encoder
         self._mteb_model_meta = ModelMeta(
-            name="layerwise-sparse-encoder",
+            name="custom/layerwise-sparse-encoder",
             revision="0.0.1",
+            release_date="2026-07-29",
+            languages=["eng-Latn"],
+            n_parameters=None,
+            memory_usage_mb=None,
+            max_tokens=512,
+            embed_dim=32768,
+            license=None,
+            open_weights=True,
+            public_training_code=None,
+            public_training_data=None,
+            framework=["PyTorch"],
+            similarity_fn_name="dot",
+            use_instructions=False,
+            training_datasets=None,
+            loader=None,
         )
 
     @property
