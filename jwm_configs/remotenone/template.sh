@@ -1,18 +1,3 @@
-export JWM_SERVER_NAME=
-export JWM_CONDAENV="${RUN_DIR_HOME}/conda_envs/llm2vec"
-export JWM_GPU_NUM=
-export JWM_NODES_NUM=
-export JWM_RUN_TIME=
-export JWM_build_flashattn=
-
-if [ ! -d ${JWM_CONDAENV} ]; then
-
-    conda create -p ${JWM_CONDAENV} python=3.10 -y
-
-fi
-conda activate ${JWM_CONDAENV}
-which python
-echo $PWD
 
 # pip install -e .
 # pip install torch --force-reinstall --index-url https://download.pytorch.org/whl/cu128
@@ -45,3 +30,4 @@ echo $PWD
 #     --model_name_or_path meta-llama/Meta-Llama-3.1-8B \
 #     --dataset_name Tevatron/msmarco-passage-corpus
 
+echo ${PWD}

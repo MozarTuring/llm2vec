@@ -1,23 +1,14 @@
-export CUDA_VISIBLE_DEVICES=0
 export JWM_NOTEBOOK=1
 export JWM_RUN_COMMAND="python experiments/run_layerwise_finetune.py train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json"
 export JWM_SERVER_NAME=greatrawr
-export JWM_CONDAENV="${RUN_DIR_HOME}/conda_envs/llm2vec"
+export JWM_PYTHON="3.10"
 export JWM_GPU_NUM=
 export JWM_NODES_NUM=
 export JWM_RUN_TIME=
 export JWM_build_flashattn=
 
-if [ ! -d ${JWM_CONDAENV} ]; then
 
-    conda create -p ${JWM_CONDAENV} python=3.10 -y
-
-fi
-conda activate ${JWM_CONDAENV}
-which python
-echo $PWD
-
-# pip install -e .
+pip install -e .
 # pip install torch --force-reinstall --index-url https://download.pytorch.org/whl/cu128
 # pip install ninja
 # pip uninstall -y flash-attn 2>/dev/null
@@ -48,3 +39,4 @@ echo $PWD
 #     --model_name_or_path meta-llama/Meta-Llama-3.1-8B \
 #     --dataset_name Tevatron/msmarco-passage-corpus
 
+echo ${PWD}

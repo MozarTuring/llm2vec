@@ -430,6 +430,9 @@ class DataArguments:
 
 @dataclass
 class CustomArguments:
+    temperature: float = field(metadata={"help": "Temperature for softmax on predicted scores."})
+    lambda_q: float = field(metadata={"help": "FLOPS regularization weight for queries."})
+    lambda_d: float = field(metadata={"help": "FLOPS regularization weight for documents."})
     lora_r: int = field(default=16, metadata={"help": "LoRA rank."})
     lora_dropout: float = field(default=0.05, metadata={"help": "LoRA dropout."})
     lora_layers: int = field(
@@ -445,9 +448,6 @@ class CustomArguments:
     stop_after_n_steps: int = field(
         default=10000, metadata={"help": "Stop training after n steps."}
     )
-    temperature: float = field(metadata={"help": "Temperature for softmax on predicted scores."})
-    lambda_q: float = field(metadata={"help": "FLOPS regularization weight for queries."})
-    lambda_d: float = field(metadata={"help": "FLOPS regularization weight for documents."})
 
 
 # ═════════════════════════════════════════════════════════════════
