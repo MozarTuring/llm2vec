@@ -3,7 +3,7 @@ import json
 from typing import Any
 
 import mteb
-from mteb.models.model_api import ModelMeta
+from mteb.models.model_meta import ModelMeta
 import numpy as np
 import torch
 from torch import nn
