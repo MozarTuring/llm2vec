@@ -3,10 +3,10 @@ import json
 from typing import Any
 
 import mteb
+from mteb.models.model_api import ModelMeta
 import numpy as np
 import torch
 from torch import nn
-from scipy.sparse import csr_array
 
 from transformers import AutoConfig, AutoTokenizer
 from peft import PeftModel
@@ -110,27 +110,37 @@ class LayerwiseEncoder:
 class MTEBWrapper:
     def __init__(self, encoder):
         self.encoder = encoder
+        self._mteb_model_meta = ModelMeta(
+            name="layerwise-sparse-encoder",
+            revision="0.0.1",
+        )
 
-    def encode(self, sentences, *, prompt_name=None, **kwargs):
-        return self.encoder.encode_texts(sentences)
+    @property
+    def mteb_model_meta(self):
+        return self._mteb_model_meta
 
-    def encode_corpus(self, corpus, prompt_name=None, **kwargs):
-        if isinstance(corpus, dict):
-            sentences = [
-                (corpus["title"][i] + " " + corpus["text"][i]).strip()
-                for i in range(len(corpus["text"]))
-            ]
-        else:
-            sentences = [
-                ((doc.get("title", "") or "") + " " + doc["text"]).strip()
-                for doc in corpus
-            ]
-        if "request_qid" in kwargs:
-            kwargs.pop("request_qid")
-        return self.encoder.encode_texts(sentences)
+    def encode(self, inputs, *, task_metadata=None, hf_split=None, hf_subset=None,
+               prompt_type=None, **kwargs):
+        all_embeddings = []
+        for batch in inputs:
+            sentences = batch["text"] if isinstance(batch, dict) else batch
+            emb = self.encoder.encode_texts(sentences)
+            all_embeddings.append(emb)
+        return np.concatenate(all_embeddings, axis=0)
 
-    def encode_queries(self, queries, **kwargs):
-        return self.encode(queries, **kwargs)
+    def similarity(self, embeddings1, embeddings2):
+        if isinstance(embeddings1, np.ndarray):
+            embeddings1 = torch.from_numpy(embeddings1)
+        if isinstance(embeddings2, np.ndarray):
+            embeddings2 = torch.from_numpy(embeddings2)
+        return torch.mm(embeddings1, embeddings2.T)
+
+    def similarity_pairwise(self, embeddings1, embeddings2):
+        if isinstance(embeddings1, np.ndarray):
+            embeddings1 = torch.from_numpy(embeddings1)
+        if isinstance(embeddings2, np.ndarray):
+            embeddings2 = torch.from_numpy(embeddings2)
+        return (embeddings1 * embeddings2).sum(dim=-1)
 
 
 MTEB_ENG_V2_RETRIEVAL = [
