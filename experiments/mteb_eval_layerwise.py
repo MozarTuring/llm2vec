@@ -126,8 +126,8 @@ class LayerwiseEncoder:
             chunk_idx += 1
 
             del inputs, outputs, hidden_states, sae_out, pooled
-            torch.cuda.synchronize()
-            torch.cuda.empty_cache()
+            # torch.cuda.synchronize()
+            # torch.cuda.empty_cache()
 
         if save_dir is not None:
             with open(os.path.join(save_dir, "meta.json"), "w") as f:
@@ -269,7 +269,9 @@ if __name__ == "__main__":
 
         tasks = mteb.get_tasks(tasks=task_names)
         evaluation = mteb.MTEB(tasks=tasks)
-        results = evaluation.run(model, output_folder=args.output_dir)
+        print(f"Starting evaluation on {task_names}", flush=True)
+        results = evaluation.run(model, output_folder=args.output_dir, overwrite_results=True)
+        print(f"Evaluation complete. Results: {results}", flush=True)
     except Exception:
         traceback.print_exc()
         sys.exit(1)
