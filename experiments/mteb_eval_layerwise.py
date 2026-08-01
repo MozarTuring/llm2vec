@@ -126,6 +126,8 @@ class LayerwiseEncoder:
             chunk_idx += 1
 
             del inputs, outputs, hidden_states, sae_out, pooled
+            torch.cuda.synchronize()
+            torch.cuda.empty_cache()
 
         if save_dir is not None:
             with open(os.path.join(save_dir, "meta.json"), "w") as f:
