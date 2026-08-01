@@ -87,7 +87,7 @@ class LayerwiseEncoder:
         self.backbone.eval()
 
     @torch.no_grad()
-    def encode_texts(self, texts, batch_size=32, save_dir=None):
+    def encode_texts(self, texts, batch_size=64, save_dir=None):
         if save_dir is not None:
             os.makedirs(save_dir, exist_ok=True)
             meta_path = os.path.join(save_dir, "meta.json")
@@ -126,8 +126,6 @@ class LayerwiseEncoder:
             chunk_idx += 1
 
             del inputs, outputs, hidden_states, sae_out, pooled
-            torch.cuda.synchronize()
-            torch.cuda.empty_cache()
 
         if save_dir is not None:
             with open(os.path.join(save_dir, "meta.json"), "w") as f:
