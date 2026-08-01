@@ -1,5 +1,7 @@
 import argparse
+import glob
 import json
+import os
 from typing import Any
 
 import mteb
@@ -84,12 +86,23 @@ class LayerwiseEncoder:
         self.backbone.eval()
 
     @torch.no_grad()
-    def encode_texts(self, texts, batch_size=32):
-        all_embeddings = []
+    def encode_texts(self, texts, batch_size=128, save_dir=None):
+        if save_dir is not None:
+            os.makedirs(save_dir, exist_ok=True)
+            meta_path = os.path.join(save_dir, "meta.json")
+            if os.path.exists(meta_path):
+                with open(meta_path) as f:
+                    meta = json.load(f)
+                if meta["total"] == len(texts):
+                    chunks = sorted(glob.glob(os.path.join(save_dir, "chunk_*.npy")))
+                    if chunks:
+                        return np.concatenate([np.load(p) for p in chunks], axis=0)
+
+        chunk_idx = 0
         for start in range(0, len(texts), batch_size):
             batch = texts[start:start + batch_size]
             inputs = self.tokenizer(
-                batch, padding=True, truncation=True, max_length=512, return_tensors="pt"
+                batch, padding=True, truncation=True, max_length=1024, return_tensors="pt"
             ).to(self.device)
 
             outputs = self.backbone(
@@ -102,14 +115,28 @@ class LayerwiseEncoder:
             sae_out = torch.log(1 + torch.relu(sae_out))
             pooled, _ = sae_out.max(dim=1)
 
-            all_embeddings.append(pooled.cpu().float().numpy())
+            if save_dir is not None:
+                np.save(os.path.join(save_dir, f"chunk_{chunk_idx}.npy"),
+                        pooled.cpu().float().numpy())
+            chunk_idx += 1
 
-        return np.concatenate(all_embeddings, axis=0)
+            del inputs, outputs, hidden_states, sae_out, pooled
+            torch.cuda.synchronize()
+            torch.cuda.empty_cache()
+
+        if save_dir is not None:
+            with open(os.path.join(save_dir, "meta.json"), "w") as f:
+                json.dump({"total": len(texts)}, f)
+            chunks = sorted(glob.glob(os.path.join(save_dir, "chunk_*.npy")))
+            return np.concatenate([np.load(p) for p in chunks], axis=0)
+
+        return np.concatenate([], axis=0)
 
 
 class MTEBWrapper:
-    def __init__(self, encoder):
+    def __init__(self, encoder, cache_dir):
         self.encoder = encoder
+        self.cache_dir = cache_dir
         self._mteb_model_meta = ModelMeta(
             name="custom/layerwise-sparse-encoder",
             revision="0.0.1",
@@ -117,7 +144,7 @@ class MTEBWrapper:
             languages=["eng-Latn"],
             n_parameters=None,
             memory_usage_mb=None,
-            max_tokens=512,
+            max_tokens=1024,
             embed_dim=32768,
             license=None,
             open_weights=True,
@@ -136,12 +163,28 @@ class MTEBWrapper:
 
     def encode(self, inputs, *, task_metadata=None, hf_split=None, hf_subset=None,
                prompt_type=None, **kwargs):
-        all_embeddings = []
+        task_name = "unknown"
+        if task_metadata is not None:
+            if hasattr(task_metadata, "metadata"):
+                task_name = task_metadata.metadata.name
+            elif hasattr(task_metadata, "name"):
+                task_name = task_metadata.name
+
+        enc_type = "unknown"
+        if prompt_type is not None:
+            enc_type = prompt_type.value if hasattr(prompt_type, "value") else str(prompt_type)
+
+        save_dir = os.path.join(self.cache_dir, task_name, enc_type)
+
+        all_sentences = []
         for batch in inputs:
             sentences = batch["text"] if isinstance(batch, dict) else batch
-            emb = self.encoder.encode_texts(sentences)
-            all_embeddings.append(emb)
-        return np.concatenate(all_embeddings, axis=0)
+            if isinstance(sentences, str):
+                all_sentences.append(sentences)
+            else:
+                all_sentences.extend(sentences)
+
+        return self.encoder.encode_texts(all_sentences, save_dir=save_dir)
 
     def similarity(self, embeddings1, embeddings2):
         if isinstance(embeddings1, np.ndarray):
@@ -199,6 +242,7 @@ if __name__ == "__main__":
     parser.add_argument("--task_type", type=str, default="retrieval",
                         choices=["retrieval", "all"])
     parser.add_argument("--output_dir", type=str, default="results")
+    parser.add_argument("--cache_dir", type=str, default="embedding_cache")
     args = parser.parse_args()
 
     encoder = LayerwiseEncoder(
@@ -209,7 +253,7 @@ if __name__ == "__main__":
         trained_checkpoint_path=args.trained_checkpoint_path,
     )
 
-    model = MTEBWrapper(encoder)
+    model = MTEBWrapper(encoder, cache_dir=args.cache_dir)
 
     if args.task_name:
         task_names = [args.task_name]
