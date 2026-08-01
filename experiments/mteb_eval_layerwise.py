@@ -87,7 +87,7 @@ class LayerwiseEncoder:
         self.backbone.eval()
 
     @torch.no_grad()
-    def encode_texts(self, texts, batch_size=32, save_dir=None):
+    def encode_texts(self, texts, batch_size=32, save_dir=None, top_k=None):
         if save_dir is not None:
             os.makedirs(save_dir, exist_ok=True)
             meta_path = os.path.join(save_dir, "meta.json")
@@ -116,6 +116,10 @@ class LayerwiseEncoder:
                 sae_out = self.sae(hidden_states)
                 sae_out = torch.log(1 + torch.relu(sae_out))
                 pooled, _ = sae_out.max(dim=1)
+                if top_k is not None:
+                    vals, idx = pooled.topk(top_k, dim=-1)
+                    pooled = torch.zeros_like(pooled)
+                    pooled.scatter_(-1, idx, vals)
             except torch.cuda.OutOfMemoryError:
                 print(f"CUDA OOM at batch {start}-{start+batch_size} / {len(texts)}, batch_size={batch_size}", file=sys.stderr)
                 sys.exit(1)
@@ -139,9 +143,11 @@ class LayerwiseEncoder:
 
 
 class MTEBWrapper:
-    def __init__(self, encoder, cache_dir):
+    def __init__(self, encoder, cache_dir, query_top_k, doc_top_k):
         self.encoder = encoder
         self.cache_dir = cache_dir
+        self.query_top_k = query_top_k
+        self.doc_top_k = doc_top_k
         self._mteb_model_meta = ModelMeta(
             name="custom/layerwise-sparse-encoder",
             revision="0.0.1",
@@ -189,7 +195,8 @@ class MTEBWrapper:
             else:
                 all_sentences.extend(sentences)
 
-        return self.encoder.encode_texts(all_sentences, save_dir=save_dir)
+        top_k = self.query_top_k if enc_type in ("query",) else self.doc_top_k
+        return self.encoder.encode_texts(all_sentences, save_dir=save_dir, top_k=top_k)
 
     def similarity(self, embeddings1, embeddings2):
         if isinstance(embeddings1, np.ndarray):
@@ -248,6 +255,8 @@ if __name__ == "__main__":
                         choices=["retrieval", "all"])
     parser.add_argument("--output_dir", type=str, default="results")
     parser.add_argument("--cache_dir", type=str, default="embedding_cache")
+    parser.add_argument("--query_top_k", type=int, required=True)
+    parser.add_argument("--doc_top_k", type=int, required=True)
     args = parser.parse_args()
 
     import traceback
@@ -260,7 +269,8 @@ if __name__ == "__main__":
             trained_checkpoint_path=args.trained_checkpoint_path,
         )
 
-        model = MTEBWrapper(encoder, cache_dir=args.cache_dir)
+        model = MTEBWrapper(encoder, cache_dir=args.cache_dir,
+                            query_top_k=args.query_top_k, doc_top_k=args.doc_top_k)
 
         if args.task_name:
             task_names = [args.task_name]
