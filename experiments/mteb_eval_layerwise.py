@@ -250,21 +250,26 @@ if __name__ == "__main__":
     parser.add_argument("--cache_dir", type=str, default="embedding_cache")
     args = parser.parse_args()
 
-    encoder = LayerwiseEncoder(
-        model_name_or_path=args.model_name_or_path,
-        peft_model_name_or_path=args.peft_model_name_or_path,
-        sae_weights_path=args.sae_weights_path,
-        lora_layers=args.lora_layers,
-        trained_checkpoint_path=args.trained_checkpoint_path,
-    )
+    import traceback
+    try:
+        encoder = LayerwiseEncoder(
+            model_name_or_path=args.model_name_or_path,
+            peft_model_name_or_path=args.peft_model_name_or_path,
+            sae_weights_path=args.sae_weights_path,
+            lora_layers=args.lora_layers,
+            trained_checkpoint_path=args.trained_checkpoint_path,
+        )
 
-    model = MTEBWrapper(encoder, cache_dir=args.cache_dir)
+        model = MTEBWrapper(encoder, cache_dir=args.cache_dir)
 
-    if args.task_name:
-        task_names = [args.task_name]
-    else:
-        task_names = MTEB_ENG_V2_RETRIEVAL
+        if args.task_name:
+            task_names = [args.task_name]
+        else:
+            task_names = MTEB_ENG_V2_RETRIEVAL
 
-    tasks = mteb.get_tasks(tasks=task_names)
-    evaluation = mteb.MTEB(tasks=tasks)
-    results = evaluation.run(model, output_folder=args.output_dir)
+        tasks = mteb.get_tasks(tasks=task_names)
+        evaluation = mteb.MTEB(tasks=tasks)
+        results = evaluation.run(model, output_folder=args.output_dir)
+    except Exception:
+        traceback.print_exc()
+        sys.exit(1)
