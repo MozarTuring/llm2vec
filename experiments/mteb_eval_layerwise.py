@@ -2,6 +2,7 @@ import argparse
 import glob
 import json
 import os
+import sys
 from typing import Any
 
 import mteb
@@ -86,7 +87,7 @@ class LayerwiseEncoder:
         self.backbone.eval()
 
     @torch.no_grad()
-    def encode_texts(self, texts, batch_size=128, save_dir=None):
+    def encode_texts(self, texts, batch_size=32, save_dir=None):
         if save_dir is not None:
             os.makedirs(save_dir, exist_ok=True)
             meta_path = os.path.join(save_dir, "meta.json")
@@ -101,19 +102,23 @@ class LayerwiseEncoder:
         chunk_idx = 0
         for start in range(0, len(texts), batch_size):
             batch = texts[start:start + batch_size]
-            inputs = self.tokenizer(
-                batch, padding=True, truncation=True, max_length=1024, return_tensors="pt"
-            ).to(self.device)
+            try:
+                inputs = self.tokenizer(
+                    batch, padding=True, truncation=True, max_length=1024, return_tensors="pt"
+                ).to(self.device)
 
-            outputs = self.backbone(
-                input_ids=inputs["input_ids"],
-                attention_mask=inputs["attention_mask"],
-            )
-            hidden_states = outputs[0]
-            hidden_states = self.pre_sae_norm(hidden_states)
-            sae_out = self.sae(hidden_states)
-            sae_out = torch.log(1 + torch.relu(sae_out))
-            pooled, _ = sae_out.max(dim=1)
+                outputs = self.backbone(
+                    input_ids=inputs["input_ids"],
+                    attention_mask=inputs["attention_mask"],
+                )
+                hidden_states = outputs[0]
+                hidden_states = self.pre_sae_norm(hidden_states)
+                sae_out = self.sae(hidden_states)
+                sae_out = torch.log(1 + torch.relu(sae_out))
+                pooled, _ = sae_out.max(dim=1)
+            except torch.cuda.OutOfMemoryError:
+                print(f"CUDA OOM at batch {start}-{start+batch_size} / {len(texts)}, batch_size={batch_size}", file=sys.stderr)
+                sys.exit(1)
 
             if save_dir is not None:
                 np.save(os.path.join(save_dir, f"chunk_{chunk_idx}.npy"),
