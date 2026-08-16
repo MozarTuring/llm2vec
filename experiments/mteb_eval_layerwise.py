@@ -213,6 +213,89 @@ class MTEBWrapper:
         return (embeddings1 * embeddings2).sum(dim=-1)
 
 
+def verify_loss(encoder, hard_negatives_file, num_hard_negatives, temperature,
+                lambda_q, lambda_d, max_seq_length, num_samples=128):
+    """Compute training loss on a batch to verify the loaded model matches training."""
+    with open(hard_negatives_file) as f:
+        raw = json.load(f)
+
+    samples = []
+    for qid, item in raw.items():
+        if not item["positives"]:
+            continue
+        pos = item["positives"][0]
+        neg_items = item["hard_negatives"][:num_hard_negatives]
+        if len(neg_items) < num_hard_negatives:
+            continue
+        query = item["query"]
+        positive = pos["text"]
+        negs = [n["text"] for n in neg_items]
+        reranker_scores = [pos["reranker_score"]] + [n["reranker_score"] for n in neg_items]
+        samples.append((query, positive, negs, reranker_scores))
+        if len(samples) >= num_samples:
+            break
+
+    # Tokenize each text group separately (same as ContrastiveCollator)
+    num_texts = 2 + num_hard_negatives  # query + positive + negatives
+    text_groups = [[] for _ in range(num_texts)]
+    all_reranker_scores = []
+    for query, positive, negs, reranker_scores in samples:
+        texts = [query, positive] + negs
+        for i, t in enumerate(texts):
+            text_groups[i].append(t)
+        all_reranker_scores.append(reranker_scores)
+
+    reranker_scores_tensor = torch.tensor(all_reranker_scores).to(encoder.device)
+
+    tokenized_groups = []
+    for group in text_groups:
+        tokenized = encoder.tokenizer(
+            group, padding=True, truncation=True, max_length=max_seq_length,
+            return_tensors="pt"
+        ).to(encoder.device)
+        tokenized_groups.append(tokenized)
+
+    # Forward pass (same as LayerwiseModel.forward)
+    with torch.no_grad():
+        pooled_list = []
+        for tg in tokenized_groups:
+            outputs = encoder.backbone(
+                input_ids=tg["input_ids"], attention_mask=tg["attention_mask"]
+            )
+            hidden_states = outputs[0]
+            hidden_states = encoder.pre_sae_norm(hidden_states)
+            sae_out = encoder.sae(hidden_states)
+            sae_out = torch.log(1 + torch.relu(sae_out))
+            pooled, _ = sae_out.max(dim=1)
+            pooled_list.append(pooled)
+
+        query_enc = pooled_list[0]
+        pos_enc = pooled_list[1]
+        neg_encs = pooled_list[2:]
+
+        pos_score = (query_enc * pos_enc).sum(dim=-1, keepdim=True)
+        neg_scores = torch.stack([(query_enc * neg).sum(dim=-1) for neg in neg_encs], dim=1)
+        scores = torch.cat([pos_score, neg_scores], dim=1)
+
+        log_pred = torch.log_softmax(scores / temperature, dim=1)
+        target_probs = torch.softmax(reranker_scores_tensor, dim=1)
+        kl_loss = nn.functional.kl_div(log_pred, target_probs, reduction="batchmean")
+
+        query_flops = torch.sum(query_enc.mean(dim=0) ** 2)
+        doc_flops = sum(torch.sum(p.mean(dim=0) ** 2) for p in pooled_list[1:]) / len(pooled_list[1:])
+
+        loss = kl_loss + lambda_q * query_flops + lambda_d * doc_flops
+
+    print(f"=== Verification on {len(samples)} training samples ===", flush=True)
+    print(f"  KL loss:       {kl_loss.item():.6f}", flush=True)
+    print(f"  Query FLOPS:   {query_flops.item():.6f}", flush=True)
+    print(f"  Doc FLOPS:     {doc_flops.item():.6f}", flush=True)
+    print(f"  Total loss:    {loss.item():.6f}", flush=True)
+    print(f"  Pos score mean: {pos_score.mean().item():.4f}", flush=True)
+    print(f"  Neg score mean: {neg_scores.mean().item():.4f}", flush=True)
+    print(f"  Score range:   [{scores.min().item():.4f}, {scores.max().item():.4f}]", flush=True)
+
+
 MTEB_ENG_V2_RETRIEVAL = [
     "ArguAna",
     "CQADupstackAndroidRetrieval",
@@ -257,6 +340,12 @@ if __name__ == "__main__":
     parser.add_argument("--cache_dir", type=str, default="embedding_cache")
     parser.add_argument("--query_top_k", type=int, required=True)
     parser.add_argument("--doc_top_k", type=int, required=True)
+    parser.add_argument("--hard_negatives_file", type=str, required=True)
+    parser.add_argument("--num_hard_negatives", type=int, required=True)
+    parser.add_argument("--temperature", type=float, required=True)
+    parser.add_argument("--lambda_q", type=float, required=True)
+    parser.add_argument("--lambda_d", type=float, required=True)
+    parser.add_argument("--max_seq_length", type=int, required=True)
     args = parser.parse_args()
 
     import traceback
@@ -268,6 +357,9 @@ if __name__ == "__main__":
             lora_layers=args.lora_layers,
             trained_checkpoint_path=args.trained_checkpoint_path,
         )
+
+        verify_loss(encoder, args.hard_negatives_file, args.num_hard_negatives,
+                    args.temperature, args.lambda_q, args.lambda_d, args.max_seq_length)
 
         model = MTEBWrapper(encoder, cache_dir=args.cache_dir,
                             query_top_k=args.query_top_k, doc_top_k=args.doc_top_k)
