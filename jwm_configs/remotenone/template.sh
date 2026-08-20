@@ -30,3 +30,4 @@
 #     --model_name_or_path meta-llama/Meta-Llama-3.1-8B \
 #     --dataset_name Tevatron/msmarco-passage-corpus
 # pip install mteb
+pip install ir_datasets
