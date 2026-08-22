@@ -40,8 +40,8 @@ class SqrtDNorm(nn.Module):
 
 class LayerwiseEncoder:
     def __init__(self, model_name_or_path, peft_model_name_or_path, sae_weights_path,
-                 lora_layers, trained_checkpoint_path=None, torch_dtype=torch.bfloat16,
-                 attn_implementation="sdpa"):
+                 lora_layers, trained_checkpoint_path=None, max_length=1024,
+                 torch_dtype=torch.bfloat16, attn_implementation="sdpa"):
         config = AutoConfig.from_pretrained(model_name_or_path)
         model_class = get_model_class(config)
 
@@ -84,6 +84,7 @@ class LayerwiseEncoder:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.backbone.to(self.device)
         self.sae.to(self.device)
+        self.max_length = max_length
         self.backbone.eval()
 
     @torch.no_grad()
@@ -104,7 +105,7 @@ class LayerwiseEncoder:
             batch = texts[start:start + batch_size]
             try:
                 inputs = self.tokenizer(
-                    batch, padding=True, truncation=True, max_length=1024, return_tensors="pt"
+                    batch, padding=True, truncation=True, max_length=self.max_length, return_tensors="pt"
                 ).to(self.device)
 
                 outputs = self.backbone(
@@ -143,7 +144,7 @@ class LayerwiseEncoder:
 
 
 class MTEBWrapper:
-    def __init__(self, encoder, cache_dir, query_top_k, doc_top_k):
+    def __init__(self, encoder, cache_dir, query_top_k, doc_top_k, max_length=1024):
         self.encoder = encoder
         self.cache_dir = cache_dir
         self.query_top_k = query_top_k
@@ -155,7 +156,7 @@ class MTEBWrapper:
             languages=["eng-Latn"],
             n_parameters=None,
             memory_usage_mb=None,
-            max_tokens=1024,
+            max_tokens=max_length,
             embed_dim=32768,
             license=None,
             open_weights=True,
@@ -340,6 +341,8 @@ if __name__ == "__main__":
     parser.add_argument("--cache_dir", type=str, default="embedding_cache")
     parser.add_argument("--query_top_k", type=int, required=True)
     parser.add_argument("--doc_top_k", type=int, required=True)
+    parser.add_argument("--max_length", type=int, default=1024,
+                        help="Maximum token length for tokenizer truncation (default: 1024)")
     parser.add_argument("--hard_negatives_file", type=str, required=True)
     parser.add_argument("--num_hard_negatives", type=int, required=True)
     parser.add_argument("--temperature", type=float, required=True)
@@ -356,13 +359,15 @@ if __name__ == "__main__":
             sae_weights_path=args.sae_weights_path,
             lora_layers=args.lora_layers,
             trained_checkpoint_path=args.trained_checkpoint_path,
+            max_length=args.max_length,
         )
 
         verify_loss(encoder, args.hard_negatives_file, args.num_hard_negatives,
                     args.temperature, args.lambda_q, args.lambda_d, args.max_seq_length)
 
         model = MTEBWrapper(encoder, cache_dir=args.cache_dir,
-                            query_top_k=args.query_top_k, doc_top_k=args.doc_top_k)
+                            query_top_k=args.query_top_k, doc_top_k=args.doc_top_k,
+                            max_length=args.max_length)
 
         if args.task_name:
             task_names = [args.task_name]
