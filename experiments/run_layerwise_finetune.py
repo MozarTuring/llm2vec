@@ -395,7 +395,8 @@ class LayerwiseTrainer(Trainer):
         os.makedirs(output_dir, exist_ok=True)
         logger.info(f"Saving model checkpoint to {output_dir}")
 
-        self.model.save_peft_model(output_dir)
+        unwrapped = self.accelerator.unwrap_model(self.model)
+        unwrapped.save_peft_model(output_dir)
         if self.tokenizer is not None:
             self.tokenizer.save_pretrained(output_dir)
         torch.save(self.args, os.path.join(output_dir, "training_args.bin"))
