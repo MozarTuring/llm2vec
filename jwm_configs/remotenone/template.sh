@@ -28,7 +28,13 @@
 
 # pip install mteb
 # pip install ir_datasets
+# pip install -q huggingface_hub
 #
 # python experiments/download_model.py \
 #     --model_name_or_path meta-llama/Meta-Llama-3.1-8B \
 #     --dataset_name Tevatron/msmarco-passage-corpus
+
+
+# hf download "OpenMOSS-Team/Llama3_1-8B-Base-LXR-8x" \
+#   --include "Llama3_1-8B-Base-L26R-8x/*" \
+#   --local-dir "${JWM_DATA_DIR}"

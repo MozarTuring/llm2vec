@@ -61,6 +61,7 @@ logger = logging.getLogger(__name__)
 #  Abstract components — implement these for your task
 # ═════════════════════════════════════════════════════════════════
 
+
 class SparseAutoencoder(nn.Module):
     """Sparse autoencoder applied to the truncated backbone output.
 
@@ -92,13 +93,16 @@ class TaskHead(nn.Module):
         super().__init__()
         self.hidden_size = hidden_size
 
-    def forward(self, pred_probs: torch.Tensor, target_probs: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, pred_probs: torch.Tensor, target_probs: torch.Tensor
+    ) -> torch.Tensor:
         raise NotImplementedError("Implement TaskHead.forward()")
 
 
 # ═════════════════════════════════════════════════════════════════
 #  Normalization
 # ═════════════════════════════════════════════════════════════════
+
 
 class SqrtDNorm(nn.Module):
     """Normalize each vector so that its L2 norm equals sqrt(dim).
@@ -109,12 +113,17 @@ class SqrtDNorm(nn.Module):
 
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
         dim = hidden_states.shape[-1]
-        return hidden_states * (dim ** 0.5) / hidden_states.norm(p=2, dim=-1, keepdim=True).clamp(min=1e-8)
+        return (
+            hidden_states
+            * (dim**0.5)
+            / hidden_states.norm(p=2, dim=-1, keepdim=True).clamp(min=1e-8)
+        )
 
 
 # ═════════════════════════════════════════════════════════════════
 #  Model
 # ═════════════════════════════════════════════════════════════════
+
 
 class LayerwiseModel(nn.Module):
     """Truncated backbone + normalization + SAE + task head.
@@ -123,7 +132,9 @@ class LayerwiseModel(nn.Module):
     forward() — all 10 text groups → norm → SAE → task head → loss
     """
 
-    def __init__(self, config, backbone, sae, task_head, temperature, lambda_q, lambda_d):
+    def __init__(
+        self, config, backbone, sae, task_head, temperature, lambda_q, lambda_d
+    ):
         super().__init__()
         self.config = config
         self.backbone = backbone
@@ -150,7 +161,9 @@ class LayerwiseModel(nn.Module):
     def flops_loss(sae_out):
         return torch.sum(sae_out.mean(dim=0) ** 2)
 
-    def forward(self, features: List[Dict[str, torch.Tensor]], reranker_scores: torch.Tensor):
+    def forward(
+        self, features: List[Dict[str, torch.Tensor]], reranker_scores: torch.Tensor
+    ):
         results = [self.encode(f) for f in features]
         pooled = [r[0] for r in results]
         sae_outs = [r[1] for r in results]
@@ -160,7 +173,9 @@ class LayerwiseModel(nn.Module):
         negatives = pooled[2:]
 
         pos_score = (query * positive).sum(dim=-1, keepdim=True)
-        neg_scores = torch.stack([(query * neg).sum(dim=-1) for neg in negatives], dim=1)
+        neg_scores = torch.stack(
+            [(query * neg).sum(dim=-1) for neg in negatives], dim=1
+        )
         scores = torch.cat([pos_score, neg_scores], dim=1)
 
         log_pred = torch.log_softmax(scores / self.temperature, dim=1)
@@ -191,10 +206,13 @@ class LayerwiseModel(nn.Module):
 #  Data
 # ═════════════════════════════════════════════════════════════════
 
+
 class TrainSample:
     """One training example with multiple texts."""
 
-    def __init__(self, texts: List[str], reranker_scores: List[float] = None, label: float = 1.0):
+    def __init__(
+        self, texts: List[str], reranker_scores: List[float] = None, label: float = 1.0
+    ):
         self.texts = texts
         self.reranker_scores = reranker_scores
         self.label = label
@@ -233,7 +251,9 @@ class MSMARCOHardNegDataset(torch.utils.data.Dataset):
             if len(negs) < num_hard_negatives:
                 skipped += 1
                 continue
-            reranker_scores = [pos["reranker_score"]] + [n["reranker_score"] for n in neg_items]
+            reranker_scores = [pos["reranker_score"]] + [
+                n["reranker_score"] for n in neg_items
+            ]
             self.samples.append((query, positive, negs, reranker_scores))
 
         print(
@@ -288,6 +308,7 @@ class ContrastiveCollator:
 # ═════════════════════════════════════════════════════════════════
 #  LoRA setup
 # ═════════════════════════════════════════════════════════════════
+
 
 def get_model_class(config):
     name = config.__class__.__name__
@@ -347,6 +368,7 @@ def initialize_peft(
 #  Trainer
 # ═════════════════════════════════════════════════════════════════
 
+
 class StopTrainingCallback(TrainerCallback):
     def __init__(self, stop_after_n_steps: int):
         self.stop_after_n_steps = stop_after_n_steps
@@ -383,6 +405,7 @@ class LayerwiseTrainer(Trainer):
 #  Arguments
 # ═════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class ModelArguments:
     model_name_or_path: Optional[str] = field(
@@ -391,7 +414,9 @@ class ModelArguments:
     )
     peft_model_name_or_path: Optional[str] = field(
         default=None,
-        metadata={"help": "Prior PEFT/LoRA checkpoint to load and merge (e.g. MNTP output)."},
+        metadata={
+            "help": "Prior PEFT/LoRA checkpoint to load and merge (e.g. MNTP output)."
+        },
     )
     tokenizer_name: Optional[str] = field(default=None)
     cache_dir: Optional[str] = field(default=None)
@@ -408,7 +433,9 @@ class ModelArguments:
     low_cpu_mem_usage: bool = field(default=False)
     sae_weights_path: Optional[str] = field(
         default=None,
-        metadata={"help": "Path to the safetensors file containing SAE encoder weights."},
+        metadata={
+            "help": "Path to the safetensors file containing SAE encoder weights."
+        },
     )
 
 
@@ -416,7 +443,9 @@ class ModelArguments:
 class DataArguments:
     hard_negatives_file: str = field(
         default="msmarco_hard_negatives.json",
-        metadata={"help": "Path to the hard negatives JSON produced by experiments/hard_negatives.py."},
+        metadata={
+            "help": "Path to the hard negatives JSON produced by experiments/hard_negatives.py."
+        },
     )
     num_hard_negatives: int = field(
         default=8,
@@ -430,9 +459,15 @@ class DataArguments:
 
 @dataclass
 class CustomArguments:
-    temperature: float = field(metadata={"help": "Temperature for softmax on predicted scores."})
-    lambda_q: float = field(metadata={"help": "FLOPS regularization weight for queries."})
-    lambda_d: float = field(metadata={"help": "FLOPS regularization weight for documents."})
+    temperature: float = field(
+        metadata={"help": "Temperature for softmax on predicted scores."}
+    )
+    lambda_q: float = field(
+        metadata={"help": "FLOPS regularization weight for queries."}
+    )
+    lambda_d: float = field(
+        metadata={"help": "FLOPS regularization weight for documents."}
+    )
     lora_r: int = field(default=16, metadata={"help": "LoRA rank."})
     lora_dropout: float = field(default=0.05, metadata={"help": "LoRA dropout."})
     lora_layers: int = field(
@@ -454,13 +489,36 @@ class CustomArguments:
 #  Main
 # ═════════════════════════════════════════════════════════════════
 
+
 def main():
     parser = HfArgumentParser(
         (ModelArguments, DataArguments, TrainingArguments, CustomArguments)
     )
     if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
-        model_args, data_args, training_args, custom_args = parser.parse_json_file(
-            json_file=os.path.abspath(sys.argv[1])
+        json_file = os.path.abspath(sys.argv[1])
+        with open(json_file) as f:
+            config_dict = json.load(f)
+
+        # Infer sae_weights_path and output_dir from lora_layers if not specified
+        lora_layers = config_dict.get("lora_layers")
+        config_dict["sae_weights_path"] = (
+            f"/home/jinma/project_remote_jwm/remote_data/llm2vec/"
+            f"Llama3_1-8B-Base-L{lora_layers}R-8x/checkpoints/final.safetensors"
+        )
+        print(
+            f"Inferred sae_weights_path from lora_layers={lora_layers}: "
+            f"{config_dict['sae_weights_path']}"
+        )
+        config_dict["output_dir"] = (
+            f"output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L{lora_layers}"
+        )
+        print(
+            f"Inferred output_dir from lora_layers={lora_layers}: "
+            f"{config_dict['output_dir']}"
+        )
+
+        model_args, data_args, training_args, custom_args = parser.parse_dict(
+            config_dict
         )
     else:
         (
@@ -559,7 +617,7 @@ def main():
     hidden_size = config.hidden_size
     with safe_open(model_args.sae_weights_path, framework="pt") as f:
         encoder_weight = f.get_tensor("encoder.weight")  # Shape: [32768, 4096]
-        encoder_bias = f.get_tensor("encoder.bias")       # Shape: [32768]
+        encoder_bias = f.get_tensor("encoder.bias")  # Shape: [32768]
     sae = nn.Linear(4096, 32768)
     with torch.no_grad():
         sae.weight.copy_(encoder_weight)
