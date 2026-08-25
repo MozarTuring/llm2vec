@@ -503,7 +503,7 @@ def main():
         # Infer sae_weights_path and output_dir from lora_layers if not specified
         lora_layers = config_dict.get("lora_layers")
         config_dict["sae_weights_path"] = (
-            f"/home/jinma/project_remote_jwm/remote_data/llm2vec/"
+            f"../remote_data/llm2vec/"
             f"Llama3_1-8B-Base-L{lora_layers}R-8x/checkpoints/final.safetensors"
         )
         print(
