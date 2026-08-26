@@ -598,6 +598,13 @@ def main():
         f"{total_layers} layers (indices 0-{total_layers - 1})"
     )
     model.layers = model.layers[:num_active]
+    # The SAE was trained on the residual stream BEFORE the model's final
+    # RMSNorm (hook_point = "blocks.N.hook_resid_post").  HuggingFace's
+    # LlamaModel.forward() applies self.norm() to the last hidden state
+    # before returning it, which distorts the distribution the SAE expects.
+    # Replace the final norm with Identity so outputs[0] is the raw
+    # residual stream that the SAE encoder was trained on.
+    model.norm = nn.Identity()
     print(
         f"Truncated model: kept layers 0-{custom_args.lora_layers} "
         f"({num_active}/{total_layers}), discarded layers "
