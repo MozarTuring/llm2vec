@@ -68,8 +68,6 @@ class LayerwiseEncoder:
             backbone = PeftModel.from_pretrained(backbone, trained_checkpoint_path)
 
         self.backbone = backbone
-        self.pre_sae_norm = SqrtDNorm()
-
         with safe_open(sae_weights_path, framework="pt") as f:
             encoder_weight = f.get_tensor("encoder.weight")
             encoder_bias = f.get_tensor("encoder.bias")
@@ -113,7 +111,6 @@ class LayerwiseEncoder:
                     attention_mask=inputs["attention_mask"],
                 )
                 hidden_states = outputs[0]
-                hidden_states = self.pre_sae_norm(hidden_states)
                 sae_out = self.sae(hidden_states)
                 sae_out = torch.log(1 + torch.relu(sae_out))
                 pooled, _ = sae_out.max(dim=1)
@@ -264,7 +261,6 @@ def verify_loss(encoder, hard_negatives_file, num_hard_negatives, temperature,
                 input_ids=tg["input_ids"], attention_mask=tg["attention_mask"]
             )
             hidden_states = outputs[0]
-            hidden_states = encoder.pre_sae_norm(hidden_states)
             sae_out = encoder.sae(hidden_states)
             sae_out = torch.log(1 + torch.relu(sae_out))
             pooled, _ = sae_out.max(dim=1)

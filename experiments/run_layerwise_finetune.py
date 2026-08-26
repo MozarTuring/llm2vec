@@ -138,7 +138,6 @@ class LayerwiseModel(nn.Module):
         super().__init__()
         self.config = config
         self.backbone = backbone
-        self.pre_sae_norm = SqrtDNorm()
         self.sae = sae
         self.task_head = task_head
         self.temperature = temperature
@@ -151,7 +150,6 @@ class LayerwiseModel(nn.Module):
             attention_mask=sentence_feature["attention_mask"],
         )
         hidden_states = outputs[0]
-        hidden_states = self.pre_sae_norm(hidden_states)
         sae_out = self.sae(hidden_states)
         sae_out = torch.log(1 + torch.relu(sae_out))
         pooled, _ = sae_out.max(dim=1)
