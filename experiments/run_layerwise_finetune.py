@@ -615,7 +615,7 @@ def main():
     model = initialize_peft(
         model,
         lora_r=custom_args.lora_r,
-        lora_alpha=2 * custom_args.lora_r,
+        lora_alpha=custom_args.lora_r,
         lora_dropout=custom_args.lora_dropout,
     )
 
