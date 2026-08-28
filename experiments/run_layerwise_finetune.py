@@ -151,7 +151,12 @@ class LayerwiseModel(nn.Module):
         )
         hidden_states = outputs[0]
         sae_out = self.sae(hidden_states)
-        sae_out = torch.log(1 + torch.relu(sae_out))
+        # JumpReLU activation (threshold from SAE hyperparams)
+        sae_out = torch.where(sae_out > 0.9609375, sae_out, torch.zeros_like(sae_out))
+        # SAE TopK=50: keep only top-50 features per token
+        topk_vals, topk_idx = sae_out.topk(50, dim=-1)
+        sae_out = torch.zeros_like(sae_out).scatter_(-1, topk_idx, topk_vals)
+        sae_out = torch.log(1 + sae_out)
         pooled, _ = sae_out.max(dim=1)
         return pooled, sae_out
 
