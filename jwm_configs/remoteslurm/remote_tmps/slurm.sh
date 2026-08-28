@@ -44,18 +44,13 @@ if [[ -n "${JWM_CONDAENV}" ]]; then
 fi
 which python
 
-
 if [[ -n ${JWM_build_flashattn} ]]; then
     MAX_JOBS=${CPUS_PER_TASK} FLASH_ATTENTION_FORCE_BUILD=TRUE pip install ${JWM_CONDAENV}/flash_attn_src/flash_attn*.tar.gz --no-build-isolation --no-cache-dir
     echo "flash attn build done"
     exit
 fi
 
+export LD_LIBRARY_PATH=${LIBRARY_PATH}:${LD_LIBRARY_PATH:-}
 
-
-
-export LD_LIBRARY_PATH=/software/sse/manual/CUDA/12.4.1_550.54.15/lib64:/software/sse/manual/CUDA/12.4.1_550.54.15/extras/CUPTI/lib64:/software/sse/manual/ScaLAPACK/2.2.0/gcc-13.3.0/openmpi-5.0.3/openblas-0.3.27/lib:/software/sse/manual/OpenBLAS/0.3.27/gcc-13.3.0/sequential/lp64/lib:/software/sse/manual/FFTW/3.3.10/gcc-13.3.0/openmpi-5.0.3/lib:/software/sse/manual/OpenMPI/5.0.3/gcc-13.3.0/cuda-12.4.1/hpc1/lib:/software/sse/manual/GCC/13.3.0/lib64:
-
-python experiments/run_layerwise_finetune.py train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json &
-wait $!
-
+srun torchrun --nproc_per_node=${JWM_GPU_NUM} --nnodes=${JWM_NODES_NUM} ${JWM_RUN_COMMAND} &
+wait \$!
