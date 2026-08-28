@@ -9,7 +9,7 @@ from torch import nn
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from llm2vec.models import LlamaBiModel
 
-device = "cuda:1"
+device = "cuda:0"  # use CUDA_VISIBLE_DEVICES to select physical GPU
 dtype = torch.bfloat16
 
 # Load model
