@@ -22,7 +22,7 @@
     "gradient_checkpointing": true,
     "overwrite_output_dir": true,
     "do_train": true,
-    "temperature": 40,
+    "temperature": 80,
     "lambda_q": 1e-4,
     "lambda_d": 1e-4,
     "ddp_find_unused_parameters": true,

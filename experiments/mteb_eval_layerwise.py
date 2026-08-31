@@ -1,5 +1,6 @@
 import argparse
 import glob
+import hashlib
 import json
 import os
 import sys
@@ -190,8 +191,6 @@ class MTEBWrapper:
         if prompt_type is not None:
             enc_type = prompt_type.value if hasattr(prompt_type, "value") else str(prompt_type)
 
-        save_dir = os.path.join(self.cache_dir, task_name, enc_type)
-
         all_sentences = []
         for batch in inputs:
             sentences = batch["text"] if isinstance(batch, dict) else batch
@@ -199,6 +198,12 @@ class MTEBWrapper:
                 all_sentences.append(sentences)
             else:
                 all_sentences.extend(sentences)
+
+        # Unique cache dir per actual text batch (hash first+last text to distinguish MTEB shards)
+        batch_hash = hashlib.md5(
+            f"{all_sentences[0]}|||{all_sentences[-1]}|||{len(all_sentences)}".encode()
+        ).hexdigest()[:12]
+        save_dir = os.path.join(self.cache_dir, task_name, enc_type, batch_hash)
 
         top_k = self.query_top_k if enc_type in ("query",) else self.doc_top_k
         print(f"[DEBUG encode] task={task_name} enc_type={enc_type} "
