@@ -650,12 +650,13 @@ def main():
         sae_hyperparams = json.load(f)
     jump_relu_threshold = sae_hyperparams["jump_relu_threshold"]
     sae_top_k = sae_hyperparams["top_k"]
-    activation_norm = sae_hyperparams["activation_norm"]
+    activation_norm = sae_hyperparams["dataset_average_activation_norm"]["in"]
     sae_norm_scale = (hidden_size ** 0.5) / activation_norm
     print(f"SAE hyperparams from {sae_hyperparams_path}:")
     print(f"  jump_relu_threshold: {jump_relu_threshold}")
     print(f"  top_k: {sae_top_k}")
     print(f"  activation_norm: {activation_norm}")
+    print(f"  norm_activation: {sae_hyperparams.get('norm_activation', 'unknown')}")
     print(f"  sae_norm_scale: {sae_norm_scale:.4f}")
 
     task_head = TaskHead(hidden_size)

@@ -88,13 +88,14 @@ class LayerwiseEncoder:
             sae_hyperparams = json.load(f)
         self.jump_relu_threshold = sae_hyperparams["jump_relu_threshold"]
         self.sae_top_k = sae_hyperparams["top_k"]
-        activation_norm = sae_hyperparams["activation_norm"]
+        activation_norm = sae_hyperparams["dataset_average_activation_norm"]["in"]
         d_model = encoder_weight.shape[1]
         self.sae_norm_scale = (d_model ** 0.5) / activation_norm
         print(f"SAE hyperparams from {sae_hyperparams_path}:")
         print(f"  jump_relu_threshold: {self.jump_relu_threshold}")
         print(f"  top_k: {self.sae_top_k}")
         print(f"  activation_norm: {activation_norm}")
+        print(f"  norm_activation: {sae_hyperparams.get('norm_activation', 'unknown')}")
         print(f"  sae_norm_scale: {self.sae_norm_scale:.4f}")
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
