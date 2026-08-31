@@ -95,7 +95,8 @@ class LayerwiseEncoder:
                 with open(meta_path) as f:
                     meta = json.load(f)
                 if meta["total"] == len(texts):
-                    chunks = sorted(glob.glob(os.path.join(save_dir, "chunk_*.npy")))
+                    chunks = sorted(glob.glob(os.path.join(save_dir, "chunk_*.npy")),
+                                    key=lambda p: int(os.path.basename(p).split("_")[1].split(".")[0]))
                     if chunks:
                         print(f'chunk exists {chunks}')
                         return np.concatenate([np.load(p) for p in chunks], axis=0)
