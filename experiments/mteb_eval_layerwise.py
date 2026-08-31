@@ -81,6 +81,17 @@ class LayerwiseEncoder:
         sae.requires_grad_(False)
         self.sae = sae
 
+        # Load SAE hyperparams (JumpReLU threshold, TopK)
+        sae_dir = os.path.dirname(os.path.dirname(sae_weights_path))
+        sae_hyperparams_path = os.path.join(sae_dir, "hyperparams.json")
+        with open(sae_hyperparams_path) as f:
+            sae_hyperparams = json.load(f)
+        self.jump_relu_threshold = sae_hyperparams["jump_relu_threshold"]
+        self.sae_top_k = sae_hyperparams["top_k"]
+        print(f"SAE hyperparams from {sae_hyperparams_path}:")
+        print(f"  jump_relu_threshold: {self.jump_relu_threshold}")
+        print(f"  top_k: {self.sae_top_k}")
+
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.backbone.to(self.device)
         self.sae.to(self.device)
@@ -116,9 +127,9 @@ class LayerwiseEncoder:
                 )
                 hidden_states = outputs[0]
                 sae_out = self.sae(hidden_states)
-                # JumpReLU + TopK=50 (SAE activation)
-                sae_out = torch.where(sae_out > 0.9609375, sae_out, torch.zeros_like(sae_out))
-                topk_vals, topk_idx = sae_out.topk(50, dim=-1)
+                # JumpReLU + TopK (SAE activation from hyperparams.json)
+                sae_out = torch.where(sae_out > self.jump_relu_threshold, sae_out, torch.zeros_like(sae_out))
+                topk_vals, topk_idx = sae_out.topk(self.sae_top_k, dim=-1)
                 sae_out = torch.zeros_like(sae_out).scatter_(-1, topk_idx, topk_vals)
                 sae_out = torch.log(1 + sae_out)
                 pooled, _ = sae_out.max(dim=1)
@@ -287,9 +298,9 @@ def verify_loss(encoder, hard_negatives_file, num_hard_negatives, temperature,
             )
             hidden_states = outputs[0]
             sae_out = encoder.sae(hidden_states)
-            # JumpReLU + TopK=50 (SAE activation)
-            sae_out = torch.where(sae_out > 0.9609375, sae_out, torch.zeros_like(sae_out))
-            topk_vals, topk_idx = sae_out.topk(50, dim=-1)
+            # JumpReLU + TopK (SAE activation from hyperparams.json)
+            sae_out = torch.where(sae_out > encoder.jump_relu_threshold, sae_out, torch.zeros_like(sae_out))
+            topk_vals, topk_idx = sae_out.topk(encoder.sae_top_k, dim=-1)
             sae_out = torch.zeros_like(sae_out).scatter_(-1, topk_idx, topk_vals)
             sae_out = torch.log(1 + sae_out)
             pooled, _ = sae_out.max(dim=1)

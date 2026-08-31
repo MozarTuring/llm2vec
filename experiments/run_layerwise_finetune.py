@@ -133,7 +133,8 @@ class LayerwiseModel(nn.Module):
     """
 
     def __init__(
-        self, config, backbone, sae, task_head, temperature, lambda_q, lambda_d
+        self, config, backbone, sae, task_head, temperature, lambda_q, lambda_d,
+        jump_relu_threshold=0.9609375, sae_top_k=50,
     ):
         super().__init__()
         self.config = config
@@ -143,6 +144,8 @@ class LayerwiseModel(nn.Module):
         self.temperature = temperature
         self.lambda_q = lambda_q
         self.lambda_d = lambda_d
+        self.jump_relu_threshold = jump_relu_threshold
+        self.sae_top_k = sae_top_k
 
     def encode(self, sentence_feature: Dict[str, torch.Tensor]):
         outputs = self.backbone(
@@ -151,10 +154,10 @@ class LayerwiseModel(nn.Module):
         )
         hidden_states = outputs[0]
         sae_out = self.sae(hidden_states)
-        # JumpReLU activation (threshold from SAE hyperparams)
-        sae_out = torch.where(sae_out > 0.9609375, sae_out, torch.zeros_like(sae_out))
-        # SAE TopK=50: keep only top-50 features per token
-        topk_vals, topk_idx = sae_out.topk(50, dim=-1)
+        # JumpReLU activation (threshold from SAE hyperparams.json)
+        sae_out = torch.where(sae_out > self.jump_relu_threshold, sae_out, torch.zeros_like(sae_out))
+        # SAE TopK: keep only top-k features per token
+        topk_vals, topk_idx = sae_out.topk(self.sae_top_k, dim=-1)
         sae_out = torch.zeros_like(sae_out).scatter_(-1, topk_idx, topk_vals)
         sae_out = torch.log(1 + sae_out)
         pooled, _ = sae_out.max(dim=1)
@@ -635,6 +638,18 @@ def main():
         sae.bias.copy_(encoder_bias)
     sae.to(torch_dtype)
     sae.requires_grad_(False)
+
+    # ── Load SAE hyperparams (JumpReLU threshold, TopK) ──────
+    sae_dir = os.path.dirname(os.path.dirname(model_args.sae_weights_path))
+    sae_hyperparams_path = os.path.join(sae_dir, "hyperparams.json")
+    with open(sae_hyperparams_path) as f:
+        sae_hyperparams = json.load(f)
+    jump_relu_threshold = sae_hyperparams["jump_relu_threshold"]
+    sae_top_k = sae_hyperparams["top_k"]
+    print(f"SAE hyperparams from {sae_hyperparams_path}:")
+    print(f"  jump_relu_threshold: {jump_relu_threshold}")
+    print(f"  top_k: {sae_top_k}")
+
     task_head = TaskHead(hidden_size)
 
     layerwise_model = LayerwiseModel(
@@ -645,6 +660,8 @@ def main():
         temperature=custom_args.temperature,
         lambda_q=custom_args.lambda_q,
         lambda_d=custom_args.lambda_d,
+        jump_relu_threshold=jump_relu_threshold,
+        sae_top_k=sae_top_k,
     )
 
     print(f"\nLayerwiseModel ready:")
