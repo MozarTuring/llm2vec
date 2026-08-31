@@ -20,7 +20,7 @@ JWM_RUN_COMMAND="python experiments/mteb_eval_layerwise.py \
   --output_dir results \
   --cache_dir embedding_cache \
   --max_length 1024 \
-  --task_name SciFact"
+  --task_name MSMARCO"
 
 
 
