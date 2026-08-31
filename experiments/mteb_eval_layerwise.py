@@ -88,9 +88,14 @@ class LayerwiseEncoder:
             sae_hyperparams = json.load(f)
         self.jump_relu_threshold = sae_hyperparams["jump_relu_threshold"]
         self.sae_top_k = sae_hyperparams["top_k"]
+        activation_norm = sae_hyperparams["activation_norm"]
+        d_model = encoder_weight.shape[1]
+        self.sae_norm_scale = (d_model ** 0.5) / activation_norm
         print(f"SAE hyperparams from {sae_hyperparams_path}:")
         print(f"  jump_relu_threshold: {self.jump_relu_threshold}")
         print(f"  top_k: {self.sae_top_k}")
+        print(f"  activation_norm: {activation_norm}")
+        print(f"  sae_norm_scale: {self.sae_norm_scale:.4f}")
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.backbone.to(self.device)
@@ -126,6 +131,8 @@ class LayerwiseEncoder:
                     attention_mask=inputs["attention_mask"],
                 )
                 hidden_states = outputs[0]
+                # Dataset-wise normalization for Llama Scope SAE
+                hidden_states = hidden_states * self.sae_norm_scale
                 sae_out = self.sae(hidden_states)
                 # JumpReLU + TopK (SAE activation from hyperparams.json)
                 sae_out = torch.where(sae_out > self.jump_relu_threshold, sae_out, torch.zeros_like(sae_out))
@@ -297,6 +304,8 @@ def verify_loss(encoder, hard_negatives_file, num_hard_negatives, temperature,
                 input_ids=tg["input_ids"], attention_mask=tg["attention_mask"]
             )
             hidden_states = outputs[0]
+            # Dataset-wise normalization for Llama Scope SAE
+            hidden_states = hidden_states * encoder.sae_norm_scale
             sae_out = encoder.sae(hidden_states)
             # JumpReLU + TopK (SAE activation from hyperparams.json)
             sae_out = torch.where(sae_out > encoder.jump_relu_threshold, sae_out, torch.zeros_like(sae_out))

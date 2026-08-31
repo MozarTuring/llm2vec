@@ -134,7 +134,7 @@ class LayerwiseModel(nn.Module):
 
     def __init__(
         self, config, backbone, sae, task_head, temperature, lambda_q, lambda_d,
-        jump_relu_threshold=0.9609375, sae_top_k=50,
+        jump_relu_threshold=0.9609375, sae_top_k=50, sae_norm_scale=1.0,
     ):
         super().__init__()
         self.config = config
@@ -146,6 +146,7 @@ class LayerwiseModel(nn.Module):
         self.lambda_d = lambda_d
         self.jump_relu_threshold = jump_relu_threshold
         self.sae_top_k = sae_top_k
+        self.sae_norm_scale = sae_norm_scale
 
     def encode(self, sentence_feature: Dict[str, torch.Tensor]):
         outputs = self.backbone(
@@ -153,6 +154,9 @@ class LayerwiseModel(nn.Module):
             attention_mask=sentence_feature["attention_mask"],
         )
         hidden_states = outputs[0]
+        # Dataset-wise normalization for Llama Scope SAE:
+        # scale = sqrt(d_model) / activation_norm (constant, not per-sample)
+        hidden_states = hidden_states * self.sae_norm_scale
         sae_out = self.sae(hidden_states)
         # JumpReLU activation (threshold from SAE hyperparams.json)
         sae_out = torch.where(sae_out > self.jump_relu_threshold, sae_out, torch.zeros_like(sae_out))
@@ -646,9 +650,13 @@ def main():
         sae_hyperparams = json.load(f)
     jump_relu_threshold = sae_hyperparams["jump_relu_threshold"]
     sae_top_k = sae_hyperparams["top_k"]
+    activation_norm = sae_hyperparams["activation_norm"]
+    sae_norm_scale = (hidden_size ** 0.5) / activation_norm
     print(f"SAE hyperparams from {sae_hyperparams_path}:")
     print(f"  jump_relu_threshold: {jump_relu_threshold}")
     print(f"  top_k: {sae_top_k}")
+    print(f"  activation_norm: {activation_norm}")
+    print(f"  sae_norm_scale: {sae_norm_scale:.4f}")
 
     task_head = TaskHead(hidden_size)
 
@@ -662,6 +670,7 @@ def main():
         lambda_d=custom_args.lambda_d,
         jump_relu_threshold=jump_relu_threshold,
         sae_top_k=sae_top_k,
+        sae_norm_scale=sae_norm_scale,
     )
 
     print(f"\nLayerwiseModel ready:")
