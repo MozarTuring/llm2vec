@@ -63,6 +63,7 @@ class LayerwiseEncoder:
 
         num_active = lora_layers + 1
         backbone.layers = backbone.layers[:num_active]
+        backbone.norm = nn.Identity()
 
         if trained_checkpoint_path is not None:
             backbone = PeftModel.from_pretrained(backbone, trained_checkpoint_path)
