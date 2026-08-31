@@ -97,6 +97,7 @@ class LayerwiseEncoder:
                 if meta["total"] == len(texts):
                     chunks = sorted(glob.glob(os.path.join(save_dir, "chunk_*.npy")))
                     if chunks:
+                        print(f'chunk exists {chunks}')
                         return np.concatenate([np.load(p) for p in chunks], axis=0)
 
         chunk_idx = 0
