@@ -112,7 +112,11 @@ class LayerwiseEncoder:
                 )
                 hidden_states = outputs[0]
                 sae_out = self.sae(hidden_states)
-                sae_out = torch.log(1 + torch.relu(sae_out))
+                # JumpReLU + TopK=50 (SAE activation)
+                sae_out = torch.where(sae_out > 0.9609375, sae_out, torch.zeros_like(sae_out))
+                topk_vals, topk_idx = sae_out.topk(50, dim=-1)
+                sae_out = torch.zeros_like(sae_out).scatter_(-1, topk_idx, topk_vals)
+                sae_out = torch.log(1 + sae_out)
                 pooled, _ = sae_out.max(dim=1)
                 if top_k is not None:
                     vals, idx = pooled.topk(top_k, dim=-1)
@@ -262,7 +266,11 @@ def verify_loss(encoder, hard_negatives_file, num_hard_negatives, temperature,
             )
             hidden_states = outputs[0]
             sae_out = encoder.sae(hidden_states)
-            sae_out = torch.log(1 + torch.relu(sae_out))
+            # JumpReLU + TopK=50 (SAE activation)
+            sae_out = torch.where(sae_out > 0.9609375, sae_out, torch.zeros_like(sae_out))
+            topk_vals, topk_idx = sae_out.topk(50, dim=-1)
+            sae_out = torch.zeros_like(sae_out).scatter_(-1, topk_idx, topk_vals)
+            sae_out = torch.log(1 + sae_out)
             pooled, _ = sae_out.max(dim=1)
             pooled_list.append(pooled)
 
@@ -325,27 +333,57 @@ MTEB_ENG_V2_RETRIEVAL = [
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_name_or_path", type=str, required=True)
-    parser.add_argument("--peft_model_name_or_path", type=str, default=None)
-    parser.add_argument("--sae_weights_path", type=str, required=True)
-    parser.add_argument("--trained_checkpoint_path", type=str, default=None)
-    parser.add_argument("--lora_layers", type=int, required=True)
-    parser.add_argument("--task_name", type=str, default=None)
-    parser.add_argument("--task_type", type=str, default="retrieval",
-                        choices=["retrieval", "all"])
-    parser.add_argument("--output_dir", type=str, default="results")
-    parser.add_argument("--cache_dir", type=str, default="embedding_cache")
-    parser.add_argument("--query_top_k", type=int, required=True)
-    parser.add_argument("--doc_top_k", type=int, required=True)
-    parser.add_argument("--max_length", type=int, default=1024,
-                        help="Maximum token length for tokenizer truncation (default: 1024)")
-    parser.add_argument("--hard_negatives_file", type=str, required=True)
-    parser.add_argument("--num_hard_negatives", type=int, required=True)
-    parser.add_argument("--temperature", type=float, required=True)
-    parser.add_argument("--lambda_q", type=float, required=True)
-    parser.add_argument("--lambda_d", type=float, required=True)
-    parser.add_argument("--max_seq_length", type=int, required=True)
+    parser.add_argument("--config", type=str, default=None,
+                        help="Path to training config JSON. Values are used as defaults; "
+                             "CLI args override them.")
+    parser.add_argument("--model_name_or_path", type=str)
+    parser.add_argument("--peft_model_name_or_path", type=str)
+    parser.add_argument("--sae_weights_path", type=str)
+    parser.add_argument("--trained_checkpoint_path", type=str)
+    parser.add_argument("--lora_layers", type=int)
+    parser.add_argument("--task_name", type=str)
+    parser.add_argument("--task_type", type=str, choices=["retrieval", "all"])
+    parser.add_argument("--output_dir", type=str)
+    parser.add_argument("--cache_dir", type=str)
+    parser.add_argument("--query_top_k", type=int)
+    parser.add_argument("--doc_top_k", type=int)
+    parser.add_argument("--max_length", type=int)
+    parser.add_argument("--hard_negatives_file", type=str)
+    parser.add_argument("--num_hard_negatives", type=int)
+    parser.add_argument("--temperature", type=float)
+    parser.add_argument("--lambda_q", type=float)
+    parser.add_argument("--lambda_d", type=float)
+    parser.add_argument("--max_seq_length", type=int)
     args = parser.parse_args()
+
+    # Load config JSON and fill in any unset args
+    if args.config is not None:
+        with open(args.config) as f:
+            cfg = json.load(f)
+        config_keys = [
+            "model_name_or_path", "peft_model_name_or_path", "lora_layers",
+            "hard_negatives_file", "num_hard_negatives", "temperature",
+            "lambda_q", "lambda_d", "max_seq_length",
+        ]
+        for key in config_keys:
+            if getattr(args, key, None) is None and key in cfg:
+                setattr(args, key, cfg[key])
+
+    # Infer sae_weights_path from lora_layers if not provided
+    if args.sae_weights_path is None and args.lora_layers is not None:
+        args.sae_weights_path = (
+            f"../remote_data/llm2vec/"
+            f"Llama3_1-8B-Base-L{args.lora_layers}R-8x/checkpoints/final.safetensors"
+        )
+        print(f"Inferred sae_weights_path: {args.sae_weights_path}")
+
+    # Validate required args
+    required = ["model_name_or_path", "sae_weights_path", "lora_layers",
+                 "hard_negatives_file", "num_hard_negatives", "temperature",
+                 "lambda_q", "lambda_d", "max_seq_length"]
+    missing = [k for k in required if getattr(args, k, None) is None]
+    if missing:
+        parser.error(f"Missing required arguments (set via --config or CLI): {missing}")
 
     import traceback
     try:
