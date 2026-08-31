@@ -201,14 +201,27 @@ class MTEBWrapper:
                 all_sentences.extend(sentences)
 
         top_k = self.query_top_k if enc_type in ("query",) else self.doc_top_k
-        return self.encoder.encode_texts(all_sentences, save_dir=save_dir, top_k=top_k)
+        print(f"[DEBUG encode] task={task_name} enc_type={enc_type} "
+              f"num_texts={len(all_sentences)} top_k={top_k}", flush=True)
+        embeddings = self.encoder.encode_texts(all_sentences, save_dir=save_dir, top_k=top_k)
+        nnz = (embeddings != 0).sum(axis=1)
+        norms = np.linalg.norm(embeddings, axis=1)
+        print(f"[DEBUG encode] shape={embeddings.shape} "
+              f"nnz_per_sample: mean={nnz.mean():.0f} min={nnz.min()} max={nnz.max()} "
+              f"norm: mean={norms.mean():.2f} min={norms.min():.2f} max={norms.max():.2f}",
+              flush=True)
+        return embeddings
 
     def similarity(self, embeddings1, embeddings2):
         if isinstance(embeddings1, np.ndarray):
             embeddings1 = torch.from_numpy(embeddings1)
         if isinstance(embeddings2, np.ndarray):
             embeddings2 = torch.from_numpy(embeddings2)
-        return torch.mm(embeddings1, embeddings2.T)
+        scores = torch.mm(embeddings1, embeddings2.T)
+        print(f"[DEBUG similarity] shapes={embeddings1.shape}x{embeddings2.shape} "
+              f"scores: mean={scores.mean():.2f} min={scores.min():.2f} max={scores.max():.2f}",
+              flush=True)
+        return scores
 
     def similarity_pairwise(self, embeddings1, embeddings2):
         if isinstance(embeddings1, np.ndarray):
