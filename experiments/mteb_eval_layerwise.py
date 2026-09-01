@@ -162,6 +162,7 @@ class LayerwiseEncoder:
             with open(os.path.join(save_dir, "meta.json"), "w") as f:
                 json.dump({"total": len(texts)}, f)
             chunks = sorted(glob.glob(os.path.join(save_dir, "chunk_*.npy")))
+            print(f"sorted chunks {chunks}")
             return np.concatenate([np.load(p) for p in chunks], axis=0)
 
         return np.concatenate([], axis=0)

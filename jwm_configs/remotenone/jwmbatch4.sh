@@ -11,6 +11,13 @@ CUDA_VISIBLE_DEVICES=1
 # JWM_RUN_COMMAND="python experiments/run_layerwise_finetune.py train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json"
 
 # JWM_RUN_COMMAND="python experiments/diag_sae.py"
+JWM_TASK_NAME="SciFact"
+# JWM_TASK_NAME="ArguAna"
+# JWM_TASK_NAME="FiQA2018"
+# JWM_TASK_NAME="NFCorpus"
+# JWM_TASK_NAME="SCIDOCS"
+# JWM_TASK_NAME="Touche2020"
+# JWM_TASK_NAME="TRECCOVID"
 
 JWM_RUN_COMMAND="python experiments/mteb_eval_layerwise.py \
   --config output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L0/MetaLlama3.1-mntp-layerwise.json \
@@ -20,7 +27,7 @@ JWM_RUN_COMMAND="python experiments/mteb_eval_layerwise.py \
   --output_dir results \
   --cache_dir embedding_cache \
   --max_length 1024 \
-  --task_name SciFact"
+  --task_name ${JWM_TASK_NAME}"
 
 
 
