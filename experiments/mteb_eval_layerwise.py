@@ -146,7 +146,7 @@ class LayerwiseEncoder:
                 free_gb = torch.cuda.mem_get_info()[0] / 1024**3
             else:
                 free_gb = 8.0
-            usable_gb = free_gb - 5.0
+            usable_gb = free_gb - 15.0
 
             # Greedily add samples until the next one would exceed memory
             batch_max_len = 0
