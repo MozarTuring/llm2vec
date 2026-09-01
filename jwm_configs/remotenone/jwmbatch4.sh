@@ -13,7 +13,7 @@ CUDA_VISIBLE_DEVICES=1
 # JWM_RUN_COMMAND="python experiments/diag_sae.py"
 
 
-JWM_TASK_NAMES="SciFact ArguAna ClimateFEVER DBPedia FEVER FiQA2018 HotpotQA NFCorpus NQ QuoraRetrieval SCIDOCS TRECCOVID Touche2020" #
+JWM_TASK_NAMES="SciFact " #ArguAna ClimateFEVER DBPedia FEVER FiQA2018 HotpotQA NFCorpus NQ QuoraRetrieval SCIDOCS TRECCOVID Touche2020
 
 JWM_RUN_COMMAND="python experiments/mteb_eval_layerwise.py \
   --config output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L0/MetaLlama3.1-mntp-layerwise.json \

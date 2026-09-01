@@ -617,6 +617,7 @@ def main():
     # Replace the final norm with Identity so outputs[0] is the raw
     # residual stream that the SAE encoder was trained on.
     model.norm = nn.Identity()
+    import gc; gc.collect(); torch.cuda.empty_cache()
     print(
         f"Truncated model: kept layers 0-{custom_args.lora_layers} "
         f"({num_active}/{total_layers}), discarded layers "

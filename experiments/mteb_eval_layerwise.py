@@ -43,6 +43,7 @@ class LayerwiseEncoder:
                  torch_dtype=torch.bfloat16, attn_implementation="sdpa"):
         config = AutoConfig.from_pretrained(model_name_or_path)
         model_class = get_model_class(config)
+        num_active = lora_layers + 1
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
         if self.tokenizer.pad_token is None:
@@ -60,9 +61,10 @@ class LayerwiseEncoder:
             backbone = PeftModel.from_pretrained(backbone, peft_model_name_or_path)
             backbone = backbone.merge_and_unload()
 
-        num_active = lora_layers + 1
+        # Truncate to layers we need and free the rest
         backbone.layers = backbone.layers[:num_active]
         backbone.norm = nn.Identity()
+        import gc; gc.collect(); torch.cuda.empty_cache()
 
         if trained_checkpoint_path is not None:
             backbone = PeftModel.from_pretrained(backbone, trained_checkpoint_path)
