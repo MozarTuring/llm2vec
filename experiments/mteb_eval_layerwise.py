@@ -113,23 +113,53 @@ class LayerwiseEncoder:
         self.backbone.to(self.device)
         self.sae.to(self.device)
         self.max_length = max_length
-        self.batch_size = 64 if lora_layers == 0 else 32
+        self.d_sae = self.sae.out_features
         self.backbone.eval()
         if torch.cuda.is_available():
             free, total = torch.cuda.mem_get_info()
             print(f"Model on GPU: {free/1024**3:.1f}GB free / {total/1024**3:.1f}GB total")
 
+    def _estimate_peak_gb(self, batch_size, seq_len):
+        """Peak GPU memory: hidden(seq×4096) + ~3× sae_out(seq×d_sae) for intermediates."""
+        return batch_size * seq_len * (4096 + self.d_sae * 3) * 4 / 1024**3
+
     @torch.no_grad()
     def encode_texts(self, texts, top_k=None):
         all_chunks = []
-        batch_size = self.batch_size
-        for start in range(0, len(texts), batch_size):
-            batch = texts[start:start + batch_size]
-            try:
-                inputs = self.tokenizer(
-                    batch, padding=True, truncation=True, max_length=self.max_length, return_tensors="pt"
-                ).to(self.device)
 
+        # Pre-compute token lengths (CPU only, no padding, fast)
+        encoded = self.tokenizer(texts, truncation=True, max_length=self.max_length)
+        token_lengths = [len(ids) for ids in encoded["input_ids"]]
+        del encoded
+
+        headroom_gb = 2.0
+        start = 0
+        while start < len(texts):
+            torch.cuda.empty_cache()
+            if torch.cuda.is_available():
+                free_gb = torch.cuda.mem_get_info()[0] / 1024**3
+            else:
+                free_gb = 8.0
+            usable_gb = free_gb - headroom_gb
+
+            # Greedily add samples until the next one would exceed memory
+            batch_max_len = 0
+            batch_end = start
+            for i in range(start, len(texts)):
+                new_max_len = max(batch_max_len, token_lengths[i])
+                new_count = i - start + 1
+                if self._estimate_peak_gb(new_count, new_max_len) > usable_gb and new_count > 1:
+                    break
+                batch_max_len = new_max_len
+                batch_end = i + 1
+
+            batch_size = batch_end - start
+            inputs = self.tokenizer(
+                texts[start:batch_end], padding=True, truncation=True,
+                max_length=self.max_length, return_tensors="pt",
+            ).to(self.device)
+
+            try:
                 outputs = self.backbone(
                     input_ids=inputs["input_ids"],
                     attention_mask=inputs["attention_mask"],
@@ -149,12 +179,12 @@ class LayerwiseEncoder:
                     pooled = torch.zeros_like(pooled)
                     pooled.scatter_(-1, idx, vals)
             except torch.cuda.OutOfMemoryError:
-                print(f"CUDA OOM at batch {start}-{start+batch_size} / {len(texts)}, batch_size={batch_size}", file=sys.stderr)
+                print(f"CUDA OOM at {start}/{len(texts)}, bs={batch_size}, seq_len={batch_max_len}", file=sys.stderr)
                 sys.exit(1)
 
             all_chunks.append(pooled.cpu().float().numpy())
             del inputs, outputs, hidden_states, sae_out, pooled
-            torch.cuda.empty_cache()
+            start = batch_end
 
         return np.concatenate(all_chunks, axis=0)
 
