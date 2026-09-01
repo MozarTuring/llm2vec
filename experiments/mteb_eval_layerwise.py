@@ -120,8 +120,15 @@ class LayerwiseEncoder:
             print(f"Model on GPU: {free/1024**3:.1f}GB free / {total/1024**3:.1f}GB total")
 
     def _estimate_peak_gb(self, batch_size, seq_len):
-        """Peak GPU memory: hidden(seq×4096) + ~3× sae_out(seq×d_sae) for intermediates."""
-        return batch_size * seq_len * (4096 + self.d_sae * 3) * 4 / 1024**3
+        """Peak GPU memory per batch.
+
+        Main tensors alive simultaneously during SAE phase:
+          hidden_states (4096) + sae_out×3 (where keeps input + zeros + output) + bool mask
+        Use 50% of free memory as safety margin for allocator overhead / fragmentation.
+        """
+        # 3× d_sae float32 + 1× d_sae bool + 1× d_model float32
+        bytes_per_elem = (self.d_sae * 3) * 4 + self.d_sae * 1 + 4096 * 4
+        return batch_size * seq_len * bytes_per_elem / 1024**3
 
     @torch.no_grad()
     def encode_texts(self, texts, top_k=None):
@@ -132,7 +139,6 @@ class LayerwiseEncoder:
         token_lengths = [len(ids) for ids in encoded["input_ids"]]
         del encoded
 
-        headroom_gb = 2.0
         start = 0
         while start < len(texts):
             torch.cuda.empty_cache()
@@ -140,7 +146,8 @@ class LayerwiseEncoder:
                 free_gb = torch.cuda.mem_get_info()[0] / 1024**3
             else:
                 free_gb = 8.0
-            usable_gb = free_gb - headroom_gb
+            # Use only 50% of free memory — leaves margin for allocator overhead
+            usable_gb = free_gb * 0.5
 
             # Greedily add samples until the next one would exceed memory
             batch_max_len = 0
@@ -154,6 +161,9 @@ class LayerwiseEncoder:
                 batch_end = i + 1
 
             batch_size = batch_end - start
+            print(f"  batch {start}-{batch_end}/{len(texts)}, bs={batch_size}, "
+                  f"seq_len={batch_max_len}, free={free_gb:.1f}GB, usable={usable_gb:.1f}GB")
+
             inputs = self.tokenizer(
                 texts[start:batch_end], padding=True, truncation=True,
                 max_length=self.max_length, return_tensors="pt",
@@ -165,9 +175,11 @@ class LayerwiseEncoder:
                     attention_mask=inputs["attention_mask"],
                 )
                 hidden_states = outputs[0]
+                del outputs  # free unscaled hidden_states reference
                 # Dataset-wise normalization for Llama Scope SAE
                 hidden_states = hidden_states * self.sae_norm_scale
                 sae_out = self.sae(hidden_states)
+                del hidden_states  # free before SAE intermediates pile up
                 # JumpReLU + TopK (SAE activation from hyperparams.json)
                 sae_out = torch.where(sae_out > self.jump_relu_threshold, sae_out, torch.zeros_like(sae_out))
                 topk_vals, topk_idx = sae_out.topk(self.sae_top_k, dim=-1)
@@ -183,7 +195,7 @@ class LayerwiseEncoder:
                 sys.exit(1)
 
             all_chunks.append(pooled.cpu().float().numpy())
-            del inputs, outputs, hidden_states, sae_out, pooled
+            del inputs, sae_out, pooled
             start = batch_end
 
         return np.concatenate(all_chunks, axis=0)
