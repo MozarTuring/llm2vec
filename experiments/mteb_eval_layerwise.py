@@ -377,7 +377,7 @@ if __name__ == "__main__":
     parser.add_argument("--sae_weights_path", type=str)
     parser.add_argument("--trained_checkpoint_path", type=str)
     parser.add_argument("--lora_layers", type=int)
-    parser.add_argument("--task_name", type=str)
+    parser.add_argument("--task_name", type=str, nargs="*")
     parser.add_argument("--task_type", type=str, choices=["retrieval", "all"])
     parser.add_argument("--output_dir", type=str)
     parser.add_argument("--cache_dir", type=str)
@@ -440,7 +440,7 @@ if __name__ == "__main__":
                             max_length=args.max_length)
 
         if args.task_name:
-            task_names = [args.task_name]
+            task_names = args.task_name
         else:
             task_names = MTEB_ENG_V2_RETRIEVAL
 
