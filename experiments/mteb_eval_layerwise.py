@@ -1,7 +1,9 @@
 import argparse
+import gc
 import json
 import os
 import sys
+import time
 from typing import Any
 
 import mteb
@@ -65,7 +67,6 @@ class LayerwiseEncoder:
         total_layers = len(backbone.layers)
         backbone.layers = backbone.layers[:num_active]
         backbone.norm = nn.Identity()
-        import gc, time
         gc.collect()
         torch.cuda.empty_cache()
         time.sleep(2)
@@ -422,6 +423,11 @@ if __name__ == "__main__":
 
         verify_loss(encoder, args.hard_negatives_file, args.num_hard_negatives,
                     args.temperature, args.lambda_q, args.lambda_d, args.max_seq_length)
+        gc.collect()
+        torch.cuda.empty_cache()
+        if torch.cuda.is_available():
+            free, total = torch.cuda.mem_get_info()
+            print(f"After verify_loss cleanup: {free/1024**3:.1f}GB free / {total/1024**3:.1f}GB total")
 
         model = MTEBWrapper(encoder, query_top_k=args.query_top_k,
                             doc_top_k=args.doc_top_k, max_length=args.max_length)
