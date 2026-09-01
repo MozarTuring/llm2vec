@@ -62,9 +62,19 @@ class LayerwiseEncoder:
             backbone = backbone.merge_and_unload()
 
         # Truncate to layers we need and free the rest
+        total_layers = len(backbone.layers)
         backbone.layers = backbone.layers[:num_active]
         backbone.norm = nn.Identity()
-        import gc; gc.collect(); torch.cuda.empty_cache()
+        import gc, time
+        gc.collect()
+        torch.cuda.empty_cache()
+        time.sleep(2)
+        if torch.cuda.is_available():
+            free, total = torch.cuda.mem_get_info()
+            print(f"Truncated backbone: kept {num_active}/{total_layers} layers, "
+                  f"GPU memory: {free/1024**3:.1f}GB free / {total/1024**3:.1f}GB total")
+        else:
+            print(f"Truncated backbone: kept {num_active}/{total_layers} layers")
 
         if trained_checkpoint_path is not None:
             backbone = PeftModel.from_pretrained(backbone, trained_checkpoint_path)
@@ -104,6 +114,9 @@ class LayerwiseEncoder:
         self.max_length = max_length
         self.batch_size = 64 if lora_layers == 0 else 32
         self.backbone.eval()
+        if torch.cuda.is_available():
+            free, total = torch.cuda.mem_get_info()
+            print(f"Model on GPU: {free/1024**3:.1f}GB free / {total/1024**3:.1f}GB total")
 
     @torch.no_grad()
     def encode_texts(self, texts, top_k=None):
