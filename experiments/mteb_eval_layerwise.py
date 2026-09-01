@@ -107,16 +107,11 @@ class LayerwiseEncoder:
     @torch.no_grad()
     def encode_texts(self, texts, batch_size=32, save_dir=None, top_k=None):
         if save_dir is not None:
+            # Clean any stale chunks before writing
+            if os.path.exists(save_dir):
+                for old in glob.glob(os.path.join(save_dir, "chunk_*.npy")):
+                    os.remove(old)
             os.makedirs(save_dir, exist_ok=True)
-            # meta_path = os.path.join(save_dir, "meta.json")
-            # if os.path.exists(meta_path):
-            #     with open(meta_path) as f:
-            #         meta = json.load(f)
-            #     if meta["total"] == len(texts):
-            #         chunks = sorted(glob.glob(os.path.join(save_dir, "chunk_*.npy")))
-            #         if chunks:
-            #             print(f'chunk exists {chunks}')
-            #             return np.concatenate([np.load(p) for p in chunks], axis=0)
 
         chunk_idx = 0
         for start in range(0, len(texts), batch_size):
