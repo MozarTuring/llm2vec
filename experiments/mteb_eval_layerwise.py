@@ -102,11 +102,13 @@ class LayerwiseEncoder:
         self.backbone.to(self.device)
         self.sae.to(self.device)
         self.max_length = max_length
+        self.batch_size = 64 if lora_layers == 0 else 32
         self.backbone.eval()
 
     @torch.no_grad()
-    def encode_texts(self, texts, batch_size=32, top_k=None):
+    def encode_texts(self, texts, top_k=None):
         all_chunks = []
+        batch_size = self.batch_size
         for start in range(0, len(texts), batch_size):
             batch = texts[start:start + batch_size]
             try:
