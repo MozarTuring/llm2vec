@@ -154,6 +154,7 @@ class LayerwiseEncoder:
 
             all_chunks.append(pooled.cpu().float().numpy())
             del inputs, outputs, hidden_states, sae_out, pooled
+            torch.cuda.empty_cache()
 
         return np.concatenate(all_chunks, axis=0)
 
