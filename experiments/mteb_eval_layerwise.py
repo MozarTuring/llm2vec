@@ -108,16 +108,15 @@ class LayerwiseEncoder:
     def encode_texts(self, texts, batch_size=32, save_dir=None, top_k=None):
         if save_dir is not None:
             os.makedirs(save_dir, exist_ok=True)
-            meta_path = os.path.join(save_dir, "meta.json")
-            if os.path.exists(meta_path):
-                with open(meta_path) as f:
-                    meta = json.load(f)
-                if meta["total"] == len(texts):
-                    chunks = sorted(glob.glob(os.path.join(save_dir, "chunk_*.npy")),
-                                    key=lambda p: int(os.path.basename(p).split("_")[1].split(".")[0]))
-                    if chunks:
-                        print(f'chunk exists {chunks}')
-                        return np.concatenate([np.load(p) for p in chunks], axis=0)
+            # meta_path = os.path.join(save_dir, "meta.json")
+            # if os.path.exists(meta_path):
+            #     with open(meta_path) as f:
+            #         meta = json.load(f)
+            #     if meta["total"] == len(texts):
+            #         chunks = sorted(glob.glob(os.path.join(save_dir, "chunk_*.npy")))
+            #         if chunks:
+            #             print(f'chunk exists {chunks}')
+            #             return np.concatenate([np.load(p) for p in chunks], axis=0)
 
         chunk_idx = 0
         for start in range(0, len(texts), batch_size):
@@ -150,7 +149,7 @@ class LayerwiseEncoder:
                 sys.exit(1)
 
             if save_dir is not None:
-                np.save(os.path.join(save_dir, f"chunk_{chunk_idx}.npy"),
+                np.save(os.path.join(save_dir, f"chunk_{chunk_idx:06d}.npy"),
                         pooled.cpu().float().numpy())
             chunk_idx += 1
 
@@ -162,7 +161,6 @@ class LayerwiseEncoder:
             with open(os.path.join(save_dir, "meta.json"), "w") as f:
                 json.dump({"total": len(texts)}, f)
             chunks = sorted(glob.glob(os.path.join(save_dir, "chunk_*.npy")))
-            print(f"sorted chunks {chunks}")
             return np.concatenate([np.load(p) for p in chunks], axis=0)
 
         return np.concatenate([], axis=0)
