@@ -1,6 +1,4 @@
 import argparse
-import glob
-import hashlib
 import json
 import os
 import sys
@@ -105,15 +103,8 @@ class LayerwiseEncoder:
         self.backbone.eval()
 
     @torch.no_grad()
-    def encode_texts(self, texts, batch_size=32, save_dir=None, top_k=None):
-        if save_dir is not None:
-            # Clean any stale chunks before writing
-            if os.path.exists(save_dir):
-                for old in glob.glob(os.path.join(save_dir, "chunk_*.npy")):
-                    os.remove(old)
-            os.makedirs(save_dir, exist_ok=True)
-
-        chunk_idx = 0
+    def encode_texts(self, texts, batch_size=32, top_k=None):
+        all_chunks = []
         for start in range(0, len(texts), batch_size):
             batch = texts[start:start + batch_size]
             try:
@@ -143,28 +134,15 @@ class LayerwiseEncoder:
                 print(f"CUDA OOM at batch {start}-{start+batch_size} / {len(texts)}, batch_size={batch_size}", file=sys.stderr)
                 sys.exit(1)
 
-            if save_dir is not None:
-                np.save(os.path.join(save_dir, f"chunk_{chunk_idx:06d}.npy"),
-                        pooled.cpu().float().numpy())
-            chunk_idx += 1
-
+            all_chunks.append(pooled.cpu().float().numpy())
             del inputs, outputs, hidden_states, sae_out, pooled
-            # torch.cuda.synchronize()
-            # torch.cuda.empty_cache()
 
-        if save_dir is not None:
-            with open(os.path.join(save_dir, "meta.json"), "w") as f:
-                json.dump({"total": len(texts)}, f)
-            chunks = sorted(glob.glob(os.path.join(save_dir, "chunk_*.npy")))
-            return np.concatenate([np.load(p) for p in chunks], axis=0)
-
-        return np.concatenate([], axis=0)
+        return np.concatenate(all_chunks, axis=0)
 
 
 class MTEBWrapper:
-    def __init__(self, encoder, cache_dir, query_top_k, doc_top_k, max_length=1024):
+    def __init__(self, encoder, query_top_k, doc_top_k, max_length=1024):
         self.encoder = encoder
-        self.cache_dir = cache_dir
         self.query_top_k = query_top_k
         self.doc_top_k = doc_top_k
         self._mteb_model_meta = ModelMeta(
@@ -212,16 +190,10 @@ class MTEBWrapper:
             else:
                 all_sentences.extend(sentences)
 
-        # Unique cache dir per actual text batch (hash first+last text to distinguish MTEB shards)
-        batch_hash = hashlib.md5(
-            f"{all_sentences[0]}|||{all_sentences[-1]}|||{len(all_sentences)}".encode()
-        ).hexdigest()[:12]
-        save_dir = os.path.join(self.cache_dir, task_name, enc_type, batch_hash)
-
         top_k = self.query_top_k if enc_type in ("query",) else self.doc_top_k
         print(f"[DEBUG encode] task={task_name} enc_type={enc_type} "
               f"num_texts={len(all_sentences)} top_k={top_k}", flush=True)
-        embeddings = self.encoder.encode_texts(all_sentences, save_dir=save_dir, top_k=top_k)
+        embeddings = self.encoder.encode_texts(all_sentences, top_k=top_k)
         nnz = (embeddings != 0).sum(axis=1)
         norms = np.linalg.norm(embeddings, axis=1)
         print(f"[DEBUG encode] shape={embeddings.shape} "
@@ -380,7 +352,6 @@ if __name__ == "__main__":
     parser.add_argument("--task_name", type=str, nargs="*")
     parser.add_argument("--task_type", type=str, choices=["retrieval", "all"])
     parser.add_argument("--output_dir", type=str)
-    parser.add_argument("--cache_dir", type=str)
     parser.add_argument("--query_top_k", type=int)
     parser.add_argument("--doc_top_k", type=int)
     parser.add_argument("--max_length", type=int)
@@ -435,9 +406,8 @@ if __name__ == "__main__":
         verify_loss(encoder, args.hard_negatives_file, args.num_hard_negatives,
                     args.temperature, args.lambda_q, args.lambda_d, args.max_seq_length)
 
-        model = MTEBWrapper(encoder, cache_dir=args.cache_dir,
-                            query_top_k=args.query_top_k, doc_top_k=args.doc_top_k,
-                            max_length=args.max_length)
+        model = MTEBWrapper(encoder, query_top_k=args.query_top_k,
+                            doc_top_k=args.doc_top_k, max_length=args.max_length)
 
         if args.task_name:
             task_names = args.task_name

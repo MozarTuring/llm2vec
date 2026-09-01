@@ -21,6 +21,5 @@ JWM_RUN_COMMAND="python experiments/mteb_eval_layerwise.py \
   --query_top_k 40 \
   --doc_top_k 400 \
   --output_dir results \
-  --cache_dir embedding_cache \
   --max_length 1024 \
   --task_name ${JWM_TASK_NAMES}"
