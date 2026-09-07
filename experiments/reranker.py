@@ -87,7 +87,7 @@ def main():
     print(f"Loaded {len(hard_negatives)} queries")
 
     qids = list(hard_negatives.keys())
-    tmp_dir = tempfile.mkdtemp()
+    tmp_dir = "./"
 
     if num_gpus <= 1:
         rerank_worker(0, qids, hard_negatives, args.batch_size, tmp_dir)

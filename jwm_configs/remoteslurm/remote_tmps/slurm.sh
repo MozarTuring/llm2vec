@@ -51,6 +51,6 @@ if [[ -n ${JWM_build_flashattn} ]]; then
 fi
 
 export LD_LIBRARY_PATH=${LIBRARY_PATH}:${LD_LIBRARY_PATH:-}
-
-srun torchrun --nproc_per_node=${JWM_GPU_NUM} --nnodes=${JWM_NODES_NUM} ${JWM_RUN_COMMAND} &
-wait \$!
+echo "JWM_RUN_COMMAND, ${JWM_RUN_COMMAND}"
+srun ${JWM_RUN_COMMAND} &
+wait $!
