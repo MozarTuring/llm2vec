@@ -4,7 +4,7 @@ JWM_build_flashattn=
 JWM_NOTEBOOK=
 CUDA_VISIBLE_DEVICES=1
 
-JWM_RUN_COMMAND="python experiments/hard_negatives.py --top-k 1000 --num-top 50 --num-random 50 --output msmarco_hard_negatives_v2.json"
+JWM_RUN_COMMAND="python experiments/hard_negatives.py --top-k 1000 --num-top 50 --num-random 50 --output msmarco_hard_negatives_v2.json --query_batch_size 1024"
 
 # JWM_RUN_COMMAND="python experiments/reranker.py msmarco_hard_negatives.json --output reranked_hard_negatives.json --top_k 8"
 
