@@ -1,5 +1,6 @@
 import os
 import argparse
+import random
 import torch
 import json
 import ir_datasets
@@ -78,19 +79,29 @@ def encode_passages_to_disk(model, passage_texts, cache_dir, chunk_size=50000):
 
 def mine_hard_negatives(
     model, queries, positives, all_passages, cache_dir,
-    top_k=30, num_hard_negatives=10, query_batch_size=256, passage_chunk_size=10000,
+    top_k=1000, num_top=50, num_random=50,
+    query_batch_size=256, passage_chunk_size=10000,
+    seed=42,
 ):
+    """Mine hard negatives following SPLADE-v3 strategy.
+
+    Retrieves top_k candidates per query, then selects:
+      - num_top from the top-ranked candidates
+      - num_random sampled randomly from the remaining (rank num_top+1 to top_k)
+
+    This produces num_top + num_random candidates per query, mixing hard
+    negatives with moderately-hard ones for a healthier teacher distribution.
     """
-    Mine hard negatives: passages that score highly with the query
-    but are NOT positives.
-    """
+    rng = random.Random(seed)
     query_ids = list(queries.keys())
     query_texts = [queries[qid] for qid in query_ids]
     passage_ids = list(all_passages.keys())
     num_passages = len(passage_ids)
     num_chunks = (num_passages + passage_chunk_size - 1) // passage_chunk_size
+    total_keep = num_top + num_random
 
     print(f"\nMining hard negatives for {len(query_texts)} queries against {num_passages} passages...")
+    print(f"  Strategy: top-{num_top} + {num_random} random from rank {num_top+1}-{top_k}")
 
     hard_negatives = {}
 
@@ -133,15 +144,24 @@ def mine_hard_negatives(
             qid = query_ids[q_start + i]
             positive_pids = set(positives.get(qid, []))
 
-            negatives = []
+            # Collect all non-positive candidates (already sorted by score desc)
+            all_candidates = []
             for j in range(top_k):
                 pid = passage_ids[top_indices[i, j].item()]
                 if pid not in positive_pids:
-                    negatives.append(
+                    all_candidates.append(
                         {"pid": pid, "score": top_scores[i, j].item(), "text": all_passages[pid]}
                     )
-                    if len(negatives) >= num_hard_negatives:
-                        break
+
+            # SPLADE-v3 strategy: top-N + random from remainder
+            top_part = all_candidates[:num_top]
+            remainder = all_candidates[num_top:]
+            if len(remainder) >= num_random:
+                random_part = rng.sample(remainder, num_random)
+            else:
+                random_part = remainder
+
+            negatives = top_part + random_part
 
             hard_negatives[qid] = {
                 "query": queries[qid],
@@ -157,7 +177,10 @@ def mine_hard_negatives(
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Mine hard negatives from MS MARCO using SPLADE.")
+    parser = argparse.ArgumentParser(
+        description="Mine hard negatives from MS MARCO using SPLADE. "
+        "Follows SPLADE-v3 strategy: retrieve top-K, keep N from top + M random from remainder."
+    )
     parser.add_argument(
         "--max-queries", type=int, default=None,
         help="Max number of queries to process (default: all ~503K).",
@@ -167,12 +190,16 @@ def parse_args():
         help="Max number of passages to load from the collection (default: all ~8.8M).",
     )
     parser.add_argument(
-        "--top-k", type=int, default=30,
-        help="Number of top candidates to retrieve per query (default: 30).",
+        "--top-k", type=int, required=True,
+        help="Number of top candidates to retrieve per query from SPLADE.",
     )
     parser.add_argument(
-        "--num-hard-negatives", type=int, default=10,
-        help="Number of hard negatives to keep per query (default: 10).",
+        "--num-top", type=int, required=True,
+        help="Number of top-ranked negatives to keep (e.g. 50).",
+    )
+    parser.add_argument(
+        "--num-random", type=int, required=True,
+        help="Number of random negatives to sample from rank num_top+1 to top_k (e.g. 50).",
     )
     parser.add_argument(
         "--passage-chunk-size", type=int, default=50000,
@@ -189,6 +216,10 @@ def parse_args():
     parser.add_argument(
         "--output", type=str, default="msmarco_hard_negatives.json",
         help="Output JSON file (default: msmarco_hard_negatives.json).",
+    )
+    parser.add_argument(
+        "--seed", type=int, default=42,
+        help="Random seed for sampling (default: 42).",
     )
     return parser.parse_args()
 
@@ -216,9 +247,11 @@ def main():
         all_passages,
         args.cache_dir,
         top_k=args.top_k,
-        num_hard_negatives=args.num_hard_negatives,
+        num_top=args.num_top,
+        num_random=args.num_random,
         query_batch_size=args.query_batch_size,
         passage_chunk_size=args.passage_chunk_size,
+        seed=args.seed,
     )
 
     # Save results

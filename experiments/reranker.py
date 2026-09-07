@@ -8,7 +8,6 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("hard_negatives_file", help="Path to the hard negatives JSON file")
     parser.add_argument("--output", default="reranked_hard_negatives.json")
-    parser.add_argument("--top_k", type=int, default=8)
     parser.add_argument("--batch_size", type=int, default=64)
     args = parser.parse_args()
 
@@ -26,7 +25,7 @@ def main():
     results = {}
     for idx, (qid, data) in enumerate(hard_negatives.items()):
         query = data["query"]
-        negatives = data["hard_negatives"][:args.top_k]
+        negatives = data["hard_negatives"]
 
         if not negatives:
             results[qid] = data

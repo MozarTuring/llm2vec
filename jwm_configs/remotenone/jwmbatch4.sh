@@ -4,11 +4,11 @@ JWM_build_flashattn=
 JWM_NOTEBOOK=
 CUDA_VISIBLE_DEVICES=1
 
-# JWM_RUN_COMMAND="python experiments/hard_negatives.py"
+JWM_RUN_COMMAND="python experiments/hard_negatives.py --top-k 1000 --num-top 50 --num-random 50 --output msmarco_hard_negatives_v2.json"
 
 # JWM_RUN_COMMAND="python experiments/reranker.py msmarco_hard_negatives.json --output reranked_hard_negatives.json --top_k 8"
 
-JWM_RUN_COMMAND="python experiments/run_layerwise_finetune.py train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json"
+# JWM_RUN_COMMAND="python experiments/run_layerwise_finetune.py train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json"
 
 # JWM_RUN_COMMAND="python experiments/diag_sae.py"
 
