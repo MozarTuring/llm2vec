@@ -10,7 +10,7 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 def rerank_worker(rank, qids_shard, hard_negatives, batch_size, tmp_dir):
     """Score (query, passage) pairs for a shard of queries on one GPU."""
     device = f"cuda:{rank}"
-    model_name = "naver/trecdl22-crossencoder-debertav3"
+    model_name = os.path.join(os.environ["JWM_DATA_DIR"], "hf_models/naver/trecdl22-crossencoder-debertav3")
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForSequenceClassification.from_pretrained(model_name).eval().to(device)
     print(f"[GPU {rank}] Model loaded, processing {len(qids_shard)} queries")
