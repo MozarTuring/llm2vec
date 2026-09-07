@@ -18,7 +18,7 @@ JWM_RUN_COMMAND="python experiments/run_layerwise_finetune.py train_configs/laye
 
 # MTEB(Eng, v2) retrieval tasks (Table 6 in paper, used in Figure 2)
 # JWM_TASK_NAMES="ArguAna CQADupstackGamingRetrieval CQADupstackUnixRetrieval ClimateFEVERHardNegatives FEVERHardNegatives FiQA2018 HotpotQAHardNegatives SCIDOCS TRECCOVID Touche2020Retrieval.v3"
-
+#
 # JWM_RUN_COMMAND="python experiments/mteb_eval_layerwise.py \
 #   --config output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L0/MetaLlama3.1-mntp-layerwise.json \
 #   --trained_checkpoint_path output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L0/checkpoint-3929 \

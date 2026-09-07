@@ -159,10 +159,9 @@ class LayerwiseModel(nn.Module):
         hidden_states = hidden_states * self.sae_norm_scale
         sae_out = self.sae(hidden_states)
         # JumpReLU activation (threshold from SAE hyperparams.json)
+        # NOTE: No per-token TopK — Llama Scope JumpReLU SAEs use JumpReLU alone.
+        # The top_k in hyperparams.json is for TopK SAEs, not JumpReLU SAEs.
         sae_out = torch.where(sae_out > self.jump_relu_threshold, sae_out, torch.zeros_like(sae_out))
-        # SAE TopK: keep only top-k features per token
-        topk_vals, topk_idx = sae_out.topk(self.sae_top_k, dim=-1)
-        sae_out = torch.zeros_like(sae_out).scatter_(-1, topk_idx, topk_vals)
         sae_out = torch.log(1 + sae_out)
         pooled, _ = sae_out.max(dim=1)
         return pooled, sae_out
