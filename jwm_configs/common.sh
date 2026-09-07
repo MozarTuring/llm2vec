@@ -38,6 +38,6 @@
 #   --include "Llama3_1-8B-Base-L26R-8x/*" \
 #   --local-dir "${JWM_DATA_DIR}"
 
-hf download "naver/trecdl22-crossencoder-debertav3" \
-  --include "*" \
-  --local-dir "${JWM_DATA_DIR}/hf_models/"
+# hf download "naver/trecdl22-crossencoder-debertav3" \
+#   --include "*" \
+#   --local-dir "${JWM_DATA_DIR}/hf_models/naver/trecdl22-crossencoder-debertav3"

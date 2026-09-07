@@ -32,6 +32,7 @@ def rerank_worker(rank, qids_shard, hard_negatives, batch_size, tmp_dir):
         )
 
         all_scores = []
+        print(f"batch size {batch_size}")
         for start in range(0, len(pairs), batch_size):
             batch = pairs[start : start + batch_size]
             inputs = tokenizer(
