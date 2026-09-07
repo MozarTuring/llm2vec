@@ -1,8 +1,10 @@
 import os
 import argparse
 import random
-import torch
+import tempfile
 import json
+import torch
+import torch.multiprocessing as mp
 import ir_datasets
 from sentence_transformers import SparseEncoder
 from collections import defaultdict
@@ -50,79 +52,49 @@ def load_msmarco_data(max_queries=None, max_passages=None):
     return queries, positives, all_passages
 
 
-def encode_passages_to_disk(model, passage_texts, cache_dir, chunk_size=50000):
-    """Encode all passages in chunks and save each chunk to disk."""
-    os.makedirs(cache_dir, exist_ok=True)
-    num_chunks = (len(passage_texts) + chunk_size - 1) // chunk_size
+def gpu_worker(rank, num_gpus, query_ids, query_texts, passage_texts,
+               cache_dir, passage_chunk_size, top_k, query_batch_size,
+               num_chunks, needs_encoding, tmp_dir, barrier):
+    """Worker that runs on one GPU: encodes passages (if needed) then mines top-k."""
+    device = f"cuda:{rank}"
+    model = SparseEncoder("naver/splade-cocondenser-selfdistil", device=device)
 
-    for chunk_idx in range(num_chunks):
-        chunk_path = os.path.join(cache_dir, f"chunk_{chunk_idx}.pt")
-        if os.path.exists(chunk_path):
-            print(f"  Chunk {chunk_idx}/{num_chunks} already cached, skipping")
-            continue
+    # Phase 1: encode passages in parallel (each GPU handles its assigned chunks)
+    if needs_encoding:
+        os.makedirs(cache_dir, exist_ok=True)
+        for chunk_idx in range(rank, num_chunks, num_gpus):
+            chunk_path = os.path.join(cache_dir, f"chunk_{chunk_idx}.pt")
+            if os.path.exists(chunk_path):
+                print(f"[GPU {rank}] Chunk {chunk_idx}/{num_chunks} cached, skipping")
+                continue
+            p_start = chunk_idx * passage_chunk_size
+            p_end = min(p_start + passage_chunk_size, len(passage_texts))
+            emb = model.encode_document(passage_texts[p_start:p_end])
+            torch.save(emb.cpu(), chunk_path)
+            print(f"[GPU {rank}] Encoded chunk {chunk_idx}/{num_chunks}")
+        barrier.wait()
 
-        p_start = chunk_idx * chunk_size
-        p_end = min(p_start + chunk_size, len(passage_texts))
-        chunk_texts = passage_texts[p_start:p_end]
+    # Phase 2: mine top-k passage indices for this GPU's query shard
+    shard_qids = query_ids[rank::num_gpus]
+    shard_texts = query_texts[rank::num_gpus]
 
-        embeddings = []
-        batch = chunk_texts[ : chunk_size]
-        emb = model.encode_document(batch)
-        embeddings.append(emb.cpu())
+    shard_results = {}
+    for q_start in range(0, len(shard_qids), query_batch_size):
+        q_end = min(q_start + query_batch_size, len(shard_qids))
+        batch_texts = shard_texts[q_start:q_end]
+        num_q = q_end - q_start
 
-        chunk_emb = torch.cat(embeddings, dim=0)
-        torch.save(chunk_emb, chunk_path)
-        print(f"  Chunk {chunk_idx}/{num_chunks}: encoded {p_end - p_start} passages, saved to {chunk_path}")
+        batch_emb = model.encode_query(batch_texts)
 
-    return num_chunks
-
-
-def mine_hard_negatives(
-    model, queries, positives, all_passages, cache_dir,
-    top_k=1000, num_top=50, num_random=50,
-    query_batch_size=256, passage_chunk_size=10000,
-    seed=42,
-):
-    """Mine hard negatives following SPLADE-v3 strategy.
-
-    Retrieves top_k candidates per query, then selects:
-      - num_top from the top-ranked candidates
-      - num_random sampled randomly from the remaining (rank num_top+1 to top_k)
-
-    This produces num_top + num_random candidates per query, mixing hard
-    negatives with moderately-hard ones for a healthier teacher distribution.
-    """
-    rng = random.Random(seed)
-    query_ids = list(queries.keys())
-    query_texts = [queries[qid] for qid in query_ids]
-    passage_ids = list(all_passages.keys())
-    num_passages = len(passage_ids)
-    num_chunks = (num_passages + passage_chunk_size - 1) // passage_chunk_size
-    total_keep = num_top + num_random
-
-    print(f"\nMining hard negatives for {len(query_texts)} queries against {num_passages} passages...")
-    print(f"  Strategy: top-{num_top} + {num_random} random from rank {num_top+1}-{top_k}")
-
-    hard_negatives = {}
-
-    for q_start in range(0, len(query_ids), query_batch_size):
-        q_end = min(q_start + query_batch_size, len(query_ids))
-        batch_query_texts = query_texts[q_start:q_end]
-        num_queries_in_batch = q_end - q_start
-
-        batch_query_emb = model.encode_query(batch_query_texts)
-        device = batch_query_emb.device
-
-        top_scores = torch.full((num_queries_in_batch, top_k), float("-inf"), device=device)
-        top_indices = torch.zeros((num_queries_in_batch, top_k), dtype=torch.long, device=device)
+        top_scores = torch.full((num_q, top_k), float("-inf"), device=device)
+        top_indices = torch.zeros((num_q, top_k), dtype=torch.long, device=device)
 
         for chunk_idx in range(num_chunks):
             chunk_path = os.path.join(cache_dir, f"chunk_{chunk_idx}.pt")
-            passage_chunk_emb = torch.load(chunk_path, weights_only=True).to(device)
+            chunk_emb = torch.load(chunk_path, weights_only=True).to(device)
             p_start = chunk_idx * passage_chunk_size
 
-            chunk_scores = model.similarity(batch_query_emb, passage_chunk_emb)
-
+            chunk_scores = model.similarity(batch_emb, chunk_emb)
             chunk_k = min(top_k, chunk_scores.shape[1])
             chunk_top_scores, chunk_top_idx = torch.topk(chunk_scores, k=chunk_k, dim=1)
             chunk_top_idx += p_start
@@ -134,46 +106,26 @@ def mine_hard_negatives(
             top_scores = best_scores
             top_indices = combined_indices.gather(1, best_pos)
 
-            del passage_chunk_emb, chunk_scores
+            del chunk_emb, chunk_scores
             torch.cuda.empty_cache()
 
-        top_scores = top_scores.cpu()
-        top_indices = top_indices.cpu()
+        top_scores_cpu = top_scores.cpu()
+        top_indices_cpu = top_indices.cpu()
 
-        for i in range(num_queries_in_batch):
-            qid = query_ids[q_start + i]
-            positive_pids = set(positives.get(qid, []))
+        for i in range(num_q):
+            qid = shard_qids[q_start + i]
+            shard_results[qid] = [
+                (top_indices_cpu[i, j].item(), top_scores_cpu[i, j].item())
+                for j in range(top_k)
+                if top_scores_cpu[i, j].item() > float("-inf")
+            ]
 
-            # Collect all non-positive candidates (already sorted by score desc)
-            all_candidates = []
-            for j in range(top_k):
-                pid = passage_ids[top_indices[i, j].item()]
-                if pid not in positive_pids:
-                    all_candidates.append(
-                        {"pid": pid, "score": top_scores[i, j].item(), "text": all_passages[pid]}
-                    )
+        if q_start % (query_batch_size * 10) == 0:
+            print(f"[GPU {rank}] {q_start}/{len(shard_qids)} queries")
 
-            # SPLADE-v3 strategy: top-N + random from remainder
-            top_part = all_candidates[:num_top]
-            remainder = all_candidates[num_top:]
-            if len(remainder) >= num_random:
-                random_part = rng.sample(remainder, num_random)
-            else:
-                random_part = remainder
-
-            negatives = top_part + random_part
-
-            hard_negatives[qid] = {
-                "query": queries[qid],
-                "positives": [
-                    {"pid": pid, "text": all_passages[pid]} for pid in positive_pids
-                ],
-                "hard_negatives": negatives,
-            }
-
-        print(f"  Processed queries {q_start}-{q_end}/{len(query_ids)}")
-
-    return hard_negatives
+    output_path = os.path.join(tmp_dir, f"shard_{rank}.pt")
+    torch.save(shard_results, output_path)
+    print(f"[GPU {rank}] Done. {len(shard_results)} queries saved.")
 
 
 def parse_args():
@@ -221,54 +173,117 @@ def parse_args():
         "--seed", type=int, default=42,
         help="Random seed for sampling (default: 42).",
     )
+    parser.add_argument(
+        "--num-gpus", type=int, default=None,
+        help="Number of GPUs to use (default: all available).",
+    )
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
+    num_gpus = args.num_gpus or torch.cuda.device_count()
+    print(f"Using {num_gpus} GPU(s)")
 
-    print("Loading SPLADE CoCondenser SelfDistil model...")
-    model = SparseEncoder("naver/splade-cocondenser-selfdistil")
-
+    # ── Load data (CPU only — no CUDA before fork) ──
     queries, positives, all_passages = load_msmarco_data(
         max_queries=args.max_queries,
         max_passages=args.max_passages,
     )
-
+    passage_ids = list(all_passages.keys())
     passage_texts = list(all_passages.values())
+    query_ids = list(queries.keys())
+    query_texts = [queries[qid] for qid in query_ids]
 
-    print(f"\nEncoding {len(passage_texts):,} passages to disk...")
-    encode_passages_to_disk(model, passage_texts, args.cache_dir, chunk_size=args.passage_chunk_size)
-
-    hard_negatives = mine_hard_negatives(
-        model,
-        queries,
-        positives,
-        all_passages,
-        args.cache_dir,
-        top_k=args.top_k,
-        num_top=args.num_top,
-        num_random=args.num_random,
-        query_batch_size=args.query_batch_size,
-        passage_chunk_size=args.passage_chunk_size,
-        seed=args.seed,
+    num_passages = len(passage_ids)
+    num_chunks = (num_passages + args.passage_chunk_size - 1) // args.passage_chunk_size
+    needs_encoding = any(
+        not os.path.exists(os.path.join(args.cache_dir, f"chunk_{i}.pt"))
+        for i in range(num_chunks)
     )
+    if needs_encoding:
+        print(f"Passage cache incomplete — will encode {num_chunks} chunks across {num_gpus} GPU(s)")
+    else:
+        print(f"Passage cache complete ({num_chunks} chunks)")
 
-    # Save results
+    # ── Mine top-k indices ──
+    tmp_dir = tempfile.mkdtemp()
+
+    if num_gpus <= 1:
+        # Single-GPU: run worker directly (no fork needed)
+        gpu_worker(
+            0, 1, query_ids, query_texts, passage_texts,
+            args.cache_dir, args.passage_chunk_size, args.top_k,
+            args.query_batch_size, num_chunks, needs_encoding,
+            tmp_dir, None,
+        )
+    else:
+        ctx = mp.get_context("fork")
+        barrier = ctx.Barrier(num_gpus) if needs_encoding else None
+        processes = []
+        for rank in range(num_gpus):
+            p = ctx.Process(
+                target=gpu_worker,
+                args=(rank, num_gpus, query_ids, query_texts, passage_texts,
+                      args.cache_dir, args.passage_chunk_size, args.top_k,
+                      args.query_batch_size, num_chunks, needs_encoding,
+                      tmp_dir, barrier),
+            )
+            p.start()
+            processes.append(p)
+        for p in processes:
+            p.join()
+
+    # ── Merge shards and resolve indices → PIDs/texts ──
+    print("Merging shards and resolving passages...")
+    raw_topk = {}
+    for rank in range(num_gpus):
+        shard = torch.load(
+            os.path.join(tmp_dir, f"shard_{rank}.pt"), weights_only=False,
+        )
+        raw_topk.update(shard)
+
+    rng = random.Random(args.seed)
+    hard_negatives = {}
+    for qid in query_ids:
+        if qid not in raw_topk:
+            continue
+        positive_pids = set(positives.get(qid, []))
+
+        # Resolve global indices to PIDs + texts, filtering positives
+        candidates = []
+        for global_idx, score in raw_topk[qid]:
+            pid = passage_ids[global_idx]
+            if pid not in positive_pids:
+                candidates.append(
+                    {"pid": pid, "score": score, "text": all_passages[pid]}
+                )
+
+        # SPLADE-v3 strategy: top-N + random from remainder
+        top_part = candidates[: args.num_top]
+        remainder = candidates[args.num_top :]
+        random_part = rng.sample(remainder, min(args.num_random, len(remainder)))
+
+        hard_negatives[qid] = {
+            "query": queries[qid],
+            "positives": [
+                {"pid": pid, "text": all_passages[pid]} for pid in positive_pids
+            ],
+            "hard_negatives": top_part + random_part,
+        }
+
+    # ── Save ──
     with open(args.output, "w") as f:
         json.dump(hard_negatives, f, indent=2)
     print(f"\nSaved {len(hard_negatives):,} query hard-negative sets to {args.output}")
 
-    # Print a sample
     sample_qid = next(iter(hard_negatives))
     sample = hard_negatives[sample_qid]
     print(f"\n{'='*80}")
     print(f"Sample query: {sample['query']}")
-    print(f"\nPositive passage(s):")
-    for p in sample["positives"]:
-        print(f"  - {p['text'][:120]}...")
-    print(f"\nTop hard negatives:")
-    for i, neg in enumerate(sample["hard_negatives"][:5]):
+    print(f"Positive: {sample['positives'][0]['text'][:120]}...")
+    print(f"Num negatives: {len(sample['hard_negatives'])}")
+    for i, neg in enumerate(sample["hard_negatives"][:3]):
         print(f"  {i+1}. [score={neg['score']:.4f}] {neg['text'][:120]}...")
 
 
