@@ -8,27 +8,51 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 
 def split_to_parts(input_file, num_parts, output_dir):
-    """Split a JSON dict file into num_parts JSONL files with roughly equal queries."""
-    print(f"Loading {input_file} for splitting...")
-    with open(input_file) as f:
-        data = json.load(f)
+    """Split a JSON dict file into num_parts JSONL files with roughly equal queries.
 
-    qids = list(data.keys())
+    Two-pass streaming approach to avoid loading the entire file into memory:
+      Pass 1: collect all top-level keys (lightweight — only keys, not values).
+      Pass 2: stream key-value pairs and write each to the assigned part file.
+    Requires ``ijson`` (``pip install ijson``).
+    """
+    import ijson
+
+    # --- Pass 1: collect keys ---
+    print(f"Pass 1: counting keys in {input_file} ...")
+    qids = []
+    with open(input_file, "rb") as f:
+        for key in ijson.ObjectKeys(f):
+            qids.append(key)
     total = len(qids)
     part_size = math.ceil(total / num_parts)
-    print(f"Splitting {total} queries into {num_parts} parts (~{part_size} each)")
+    print(f"Found {total} queries, splitting into {num_parts} parts (~{part_size} each)")
 
+    # Build a qid → part_idx lookup
+    qid_to_part = {}
+    for idx, qid in enumerate(qids):
+        qid_to_part[qid] = idx // part_size
+
+    # --- Pass 2: stream values and write parts ---
     os.makedirs(output_dir, exist_ok=True)
+    part_files = {}
+    part_counts = [0] * num_parts
+    try:
+        for qid, value in ijson.kvitems(open(input_file, "rb"), ""):
+            part_idx = qid_to_part.get(qid)
+            if part_idx is None:
+                continue
+            if part_idx not in part_files:
+                part_path = os.path.join(output_dir, f"part_{part_idx:02d}.jsonl")
+                part_files[part_idx] = open(part_path, "w")
+            entry = {"qid": qid, **value} if isinstance(value, dict) else {"qid": qid, "value": value}
+            part_files[part_idx].write(json.dumps(entry) + "\n")
+            part_counts[part_idx] += 1
+    finally:
+        for fh in part_files.values():
+            fh.close()
+
     for part_idx in range(num_parts):
-        start = part_idx * part_size
-        end = min(start + part_size, total)
-        part_qids = qids[start:end]
-        part_path = os.path.join(output_dir, f"part_{part_idx:02d}.jsonl")
-        with open(part_path, "w") as f:
-            for qid in part_qids:
-                entry = {"qid": qid, **data[qid]}
-                f.write(json.dumps(entry) + "\n")
-        print(f"  Part {part_idx}: {len(part_qids)} queries → {part_path}")
+        print(f"  Part {part_idx}: {part_counts[part_idx]} queries → part_{part_idx:02d}.jsonl")
 
     print("Split complete.")
 
