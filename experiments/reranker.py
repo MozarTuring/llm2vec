@@ -126,10 +126,10 @@ def main():
                           help="Directory to write part_XX.jsonl files.")
 
     # ── rerank ──
-    sp_rerank = subparsers.add_parser("rerank", help="Rerank one JSONL part")
-    sp_rerank.add_argument("part_file", help="Path to a part_XX.jsonl file")
-    sp_rerank.add_argument("--output", required=True,
-                           help="Output JSONL file with reranker scores.")
+    sp_rerank = subparsers.add_parser("rerank", help="Rerank all JSONL parts in a directory")
+    sp_rerank.add_argument("input_dir", help="Directory containing part_XX.jsonl files")
+    sp_rerank.add_argument("--output-dir", required=True,
+                           help="Directory to write reranked_XX.jsonl files.")
     sp_rerank.add_argument("--queries-per-batch", type=int, required=True,
                            help="Number of queries per forward pass.")
     sp_rerank.add_argument("--num-gpus", type=int, default=None,
@@ -145,40 +145,53 @@ def main():
     num_gpus = args.num_gpus or torch.cuda.device_count()
     print(f"Using {num_gpus} GPU(s)")
 
-    print(f"Loading {args.part_file} ...")
-    with open(args.part_file) as f:
-        lines = [json.loads(line) for line in f]
-    print(f"Loaded {len(lines)} queries")
+    os.makedirs(args.output_dir, exist_ok=True)
+    part_files = sorted(f for f in os.listdir(args.input_dir) if f.endswith(".jsonl"))
+    print(f"Found {len(part_files)} JSONL files in {args.input_dir}")
 
-    tmp_dir = "./"
+    for part_file in part_files:
+        part_path = os.path.join(args.input_dir, part_file)
+        out_name = "reranked_" + part_file
+        out_path = os.path.join(args.output_dir, out_name)
 
-    if num_gpus <= 1:
-        rerank_worker(0, lines, args.queries_per_batch, tmp_dir)
-    else:
-        ctx = mp.get_context("fork")
-        processes = []
-        for rank in range(num_gpus):
-            shard = lines[rank::num_gpus]
-            p = ctx.Process(
-                target=rerank_worker,
-                args=(rank, shard, args.queries_per_batch, tmp_dir),
-            )
-            p.start()
-            processes.append(p)
-        for p in processes:
-            p.join()
+        if os.path.exists(out_path):
+            print(f"Skipping {part_file} — {out_name} already exists")
+            continue
 
-    # ── Merge GPU shards ──
-    print("Merging GPU shard results...")
-    with open(args.output, "w") as fout:
-        for rank in range(num_gpus):
-            shard_path = os.path.join(tmp_dir, f"result_{rank}.jsonl")
-            with open(shard_path) as fin:
-                for line in fin:
-                    fout.write(line)
-            os.remove(shard_path)
-    count = sum(1 for _ in open(args.output))
-    print(f"Saved {count} reranked queries to {args.output}")
+        print(f"\n{'='*60}")
+        print(f"Loading {part_file} ...")
+        with open(part_path) as f:
+            lines = [json.loads(line) for line in f]
+        print(f"Loaded {len(lines)} queries")
+
+        tmp_dir = "./"
+
+        if num_gpus <= 1:
+            rerank_worker(0, lines, args.queries_per_batch, tmp_dir)
+        else:
+            ctx = mp.get_context("fork")
+            processes = []
+            for rank in range(num_gpus):
+                shard = lines[rank::num_gpus]
+                p = ctx.Process(
+                    target=rerank_worker,
+                    args=(rank, shard, args.queries_per_batch, tmp_dir),
+                )
+                p.start()
+                processes.append(p)
+            for p in processes:
+                p.join()
+
+        # Merge GPU shards for this part
+        with open(out_path, "w") as fout:
+            for rank in range(num_gpus):
+                shard_path = os.path.join(tmp_dir, f"result_{rank}.jsonl")
+                with open(shard_path) as fin:
+                    for line in fin:
+                        fout.write(line)
+                os.remove(shard_path)
+        count = sum(1 for _ in open(out_path))
+        print(f"Saved {count} reranked queries to {out_path}")
 
 
 if __name__ == "__main__":
