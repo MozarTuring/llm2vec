@@ -38,7 +38,7 @@ def split_to_parts(input_file, num_parts, output_dir):
     part_files = {}
     part_counts = [0] * num_parts
     try:
-        for qid, value in ijson.kvitems(open(input_file, "rb"), ""):
+        for qid, value in ijson.kvitems(open(input_file, "rb"), "", use_float=True):
             part_idx = qid_to_part.get(qid)
             if part_idx is None:
                 continue

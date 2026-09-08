@@ -1,7 +1,7 @@
 JWM_PYTHON="3.10"
 # JWM_SERVER_NAME=berzeliusampere
+# JWM_SERVER_NAME=jusuf
 JWM_SERVER_NAME=greatrawr
-JWM_MODE=remotenone
 JWM_GPU_NUM=1
 JWM_NODES_NUM=1
 JWM_RUN_TIME="1-00:00:00"

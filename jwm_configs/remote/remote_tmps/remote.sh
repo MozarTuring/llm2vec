@@ -1,7 +1,6 @@
 set -e 
 export JWM_PYTHON="3.10"
 export JWM_SERVER_NAME=greatrawr
-export JWM_MODE=remotenone
 export JWM_GPU_NUM=1
 export JWM_NODES_NUM=1
 export JWM_RUN_TIME="1-00:00:00"
