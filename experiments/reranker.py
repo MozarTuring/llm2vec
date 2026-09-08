@@ -21,8 +21,9 @@ def split_to_parts(input_file, num_parts, output_dir):
     print(f"Pass 1: counting keys in {input_file} ...")
     qids = []
     with open(input_file, "rb") as f:
-        for key in ijson.ObjectKeys(f):
-            qids.append(key)
+        for prefix, event, value in ijson.parse(f):
+            if prefix == "" and event == "map_key":
+                qids.append(value)
     total = len(qids)
     part_size = math.ceil(total / num_parts)
     print(f"Found {total} queries, splitting into {num_parts} parts (~{part_size} each)")

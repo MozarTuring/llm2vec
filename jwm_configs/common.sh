@@ -28,7 +28,7 @@
 # pip install mteb
 # pip install ir_datasets
 # pip install -q huggingface_hub
-pip install ijson
+# pip install ijson
 #
 # python experiments/download_model.py \
 #     --model_name_or_path meta-llama/Meta-Llama-3.1-8B \
