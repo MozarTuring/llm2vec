@@ -6,7 +6,10 @@ CUDA_VISIBLE_DEVICES=1
 
 # JWM_RUN_COMMAND="python experiments/hard_negatives.py --top-k 1000 --num-top 50 --num-random 50 --output ${JWM_DATA_DIR}/msmarco_hard_negatives_v2.json --query-batch-size 8192"
 
-JWM_RUN_COMMAND="python experiments/reranker.py ${JWM_DATA_DIR}/msmarco_hard_negatives_v2.json --output ${JWM_DATA_DIR}/reranked_hard_negatives_v2.json"
+
+JWM_RUN_COMMAND="python experiments/reranker.py split ${JWM_DATA_DIR}/msmarco_hard_negatives_v2.json --num-parts 10 --output-dir ${JWM_DATA_DIR}/msmarco_hard_negatives_v2_parts/"
+
+# JWM_RUN_COMMAND="python experiments/reranker.py ${JWM_DATA_DIR}/msmarco_hard_negatives_v2.json --output ${JWM_DATA_DIR}/reranked_hard_negatives_v2.json"
 
 # JWM_RUN_COMMAND="python experiments/run_layerwise_finetune.py train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json"
 
