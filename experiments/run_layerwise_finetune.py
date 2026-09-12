@@ -232,43 +232,53 @@ class MSMARCOHardNegDataset(torch.utils.data.Dataset):
 
     Each sample has: [query, positive, neg1, neg2, ..., neg_k]
 
-    Expects the JSON output from experiments/hard_negatives.py:
-        {
-            "query_id": {
-                "query": "...",
-                "positives": [{"pid": "...", "text": "..."}],
-                "hard_negatives": [{"pid": "...", "score": ..., "text": "..."}, ...]
-            }, ...
-        }
+    Accepts either:
+      - A directory of JSONL files (one JSON object per line, each with "qid",
+        "query", "positives", "hard_negatives" keys).
+      - A single JSON file with the dict format {qid: {query, positives, hard_negatives}}.
     """
 
     def __init__(self, file_path: str, num_hard_negatives: int = 8):
-        with open(file_path) as f:
-            raw = json.load(f)
-
         self.samples = []
         skipped = 0
-        for qid, item in raw.items():
-            if not item["positives"]:
-                skipped += 1
-                continue
-            query = item["query"]
-            pos = item["positives"][0]
-            positive = pos["text"]
-            neg_items = item["hard_negatives"][:num_hard_negatives]
-            negs = [n["text"] for n in neg_items]
-            if len(negs) < num_hard_negatives:
-                skipped += 1
-                continue
-            reranker_scores = [pos["reranker_score"]] + [
-                n["reranker_score"] for n in neg_items
-            ]
-            self.samples.append((query, positive, negs, reranker_scores))
+
+        if os.path.isdir(file_path):
+            jsonl_files = sorted(
+                f for f in os.listdir(file_path) if f.endswith(".jsonl")
+            )
+            print(f"Loading {len(jsonl_files)} JSONL files from {file_path}")
+            for fname in jsonl_files:
+                fpath = os.path.join(file_path, fname)
+                with open(fpath) as f:
+                    for line in f:
+                        item = json.loads(line)
+                        skipped += self._add_sample(item, num_hard_negatives)
+        else:
+            with open(file_path) as f:
+                raw = json.load(f)
+            for qid, item in raw.items():
+                skipped += self._add_sample(item, num_hard_negatives)
 
         print(
             f"Loaded {len(self.samples)} training samples from {file_path} "
             f"({skipped} skipped, {num_hard_negatives} hard negatives each)"
         )
+
+    def _add_sample(self, item, num_hard_negatives):
+        if not item["positives"]:
+            return 1
+        query = item["query"]
+        pos = item["positives"][0]
+        positive = pos["text"]
+        neg_items = item["hard_negatives"][:num_hard_negatives]
+        negs = [n["text"] for n in neg_items]
+        if len(negs) < num_hard_negatives:
+            return 1
+        reranker_scores = [pos["reranker_score"]] + [
+            n["reranker_score"] for n in neg_items
+        ]
+        self.samples.append((query, positive, negs, reranker_scores))
+        return 0
 
     def __len__(self):
         return len(self.samples)

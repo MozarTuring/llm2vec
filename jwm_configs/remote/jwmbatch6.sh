@@ -1,20 +1,19 @@
 JWM_PYTHON="3.10"
-# JWM_SERVER_NAME=berzeliusampere
-# JWM_SERVER_NAME=jusuf
-JWM_SERVER_NAME=greatrawr
+JWM_SERVER_NAME=berzeliusampere
+# JWM_SERVER_NAME=arrhenius
+# JWM_SERVER_NAME=greatrawr
 JWM_GPU_NUM=1
 JWM_NODES_NUM=1
 JWM_RUN_TIME="1-00:00:00"
 JWM_SLURM_FILE=slurm.sh
 JWM_build_flashattn=
 JWM_NOTEBOOK=
-JWM_MODULES="Miniforge3 buildenv-gcccuda/12.4.1-gcc13.3.0"
-JWM_SLURM_NODES="--nodelist=node[061-064,065,066-093]"
+
 CUDA_VISIBLE_DEVICES=1
 
 # JWM_RUN_COMMAND="python experiments/hard_negatives.py --top-k 1000 --num-top 50 --num-random 50 --output ${JWM_DATA_DIR}/msmarco_hard_negatives_v2.json --query-batch-size 8192"
 
-JWM_RUN_COMMAND="python experiments/reranker.py split ${JWM_DATA_DIR}/msmarco_hard_negatives_v2.json --num-parts 100 --output-dir ${JWM_DATA_DIR}/msmarco_hard_negatives_v2_parts/"
+# JWM_RUN_COMMAND="python experiments/reranker.py split ${JWM_DATA_DIR}/msmarco_hard_negatives_v2.json --num-parts 100 --output-dir ${JWM_DATA_DIR}/msmarco_hard_negatives_v2_parts/"
 
 # JWM_RUN_COMMAND="python experiments/reranker.py rerank ${JWM_DATA_DIR}/msmarco_hard_negatives_v2_parts --queries-per-batch 2 --output ${JWM_DATA_DIR}/reranker_parts"
 
