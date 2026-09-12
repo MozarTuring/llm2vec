@@ -479,15 +479,6 @@ class DataArguments:
 
 @dataclass
 class CustomArguments:
-    temperature: float = field(
-        metadata={"help": "Temperature for softmax on predicted scores."}
-    )
-    lambda_q: float = field(
-        metadata={"help": "FLOPS regularization weight for queries."}
-    )
-    lambda_d: float = field(
-        metadata={"help": "FLOPS regularization weight for documents."}
-    )
     lora_r: int = field(default=16, metadata={"help": "LoRA rank."})
     lora_dropout: float = field(default=0.05, metadata={"help": "LoRA dropout."})
     lora_layers: int = field(
@@ -542,8 +533,16 @@ def main():
     parser = HfArgumentParser(
         (ModelArguments, DataArguments, TrainingArguments, CustomArguments)
     )
-    # JSON values become defaults; CLI args in remaining_argv override them
+    # Config-only keys (not CLI args) — pop before passing to HfArgumentParser
+    temperature = config_dict.pop("temperature")
+    lambda_q = config_dict.pop("lambda_q")
+    lambda_d = config_dict.pop("lambda_d")
+
+    # JSON values become defaults; CLI args in remaining_argv override them.
     parser.set_defaults(**config_dict)
+    for action in parser._actions:
+        if action.dest in config_dict and action.required:
+            action.required = False
     model_args, data_args, training_args, custom_args = (
         parser.parse_args_into_dataclasses(args=remaining_argv)
     )
@@ -676,9 +675,9 @@ def main():
         backbone=model,
         sae=sae,
         task_head=task_head,
-        temperature=custom_args.temperature,
-        lambda_q=custom_args.lambda_q,
-        lambda_d=custom_args.lambda_d,
+        temperature=temperature,
+        lambda_q=lambda_q,
+        lambda_d=lambda_d,
         jump_relu_threshold=jump_relu_threshold,
         sae_top_k=sae_top_k,
         sae_norm_scale=sae_norm_scale,
