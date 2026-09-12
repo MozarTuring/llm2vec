@@ -1,7 +1,7 @@
 JWM_PYTHON="3.10"
-JWM_SERVER_NAME=berzeliusampere
+# JWM_SERVER_NAME=berzeliusampere
 # JWM_SERVER_NAME=arrhenius
-# JWM_SERVER_NAME=greatrawr
+JWM_SERVER_NAME=greatrawr
 JWM_GPU_NUM=1
 JWM_NODES_NUM=1
 JWM_RUN_TIME="1-00:00:00"
@@ -17,7 +17,10 @@ CUDA_VISIBLE_DEVICES=1
 
 # JWM_RUN_COMMAND="python experiments/reranker.py rerank ${JWM_DATA_DIR}/msmarco_hard_negatives_v2_parts --queries-per-batch 2 --output ${JWM_DATA_DIR}/reranker_parts"
 
-# JWM_RUN_COMMAND="python experiments/run_layerwise_finetune.py train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json"
+JWM_RUN_COMMAND="python experiments/run_layerwise_finetune.py \
+    train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json \
+    --hard_negatives_file ${JWM_DATA_DIR}/reranked_parts/ \
+    --output_dir ${JWM_DATA_DIR}/output/layerwise/"
 
 # JWM_RUN_COMMAND="python experiments/diag_sae.py"
 

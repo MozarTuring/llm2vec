@@ -462,9 +462,8 @@ class ModelArguments:
 @dataclass
 class DataArguments:
     hard_negatives_file: str = field(
-        default="msmarco_hard_negatives.json",
         metadata={
-            "help": "Path to the hard negatives JSON produced by experiments/hard_negatives.py."
+            "help": "Path to reranked hard negatives. A directory of JSONL files or a single JSON file."
         },
     )
     num_hard_negatives: int = field(
