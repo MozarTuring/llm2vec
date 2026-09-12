@@ -1,4 +1,11 @@
-set -e 
+
+set -e
+# change the following vars based on your preference
+export RUN_DIR_HOME=/home/jinma
+export RUN_PROJ=llm2vec_jingwei
+export JWM_DATA_DIR=/home/jinma/project_remote_jwm/remote_data/llm2vec
+
+cd ${RUN_DIR_HOME}/project_remote_jwm/${RUN_PROJ}
 export JWM_PYTHON="3.10"
 export JWM_SERVER_NAME=greatrawr
 export JWM_GPU_NUM=1

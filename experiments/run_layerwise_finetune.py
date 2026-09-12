@@ -21,6 +21,7 @@ Each training step encodes 10 text groups through backbone+SAE:
     [query, positive, neg1, neg2, ..., neg8]
 """
 
+import argparse
 import json
 import logging
 import os
@@ -510,42 +511,42 @@ class CustomArguments:
 
 
 def main():
+    # Pre-parse --config to load JSON defaults before HfArgumentParser
+    pre_parser = argparse.ArgumentParser(add_help=False)
+    pre_parser.add_argument("--config", type=str, required=True,
+                            help="Path to JSON config file.")
+    pre_args, remaining_argv = pre_parser.parse_known_args()
+
+    json_file = os.path.abspath(pre_args.config)
+    with open(json_file) as f:
+        config_dict = json.load(f)
+
+    # Infer sae_weights_path and output_dir from lora_layers
+    lora_layers = config_dict.get("lora_layers")
+    config_dict["sae_weights_path"] = (
+        f"../remote_data/llm2vec/"
+        f"Llama3_1-8B-Base-L{lora_layers}R-8x/checkpoints/final.safetensors"
+    )
+    print(
+        f"Inferred sae_weights_path from lora_layers={lora_layers}: "
+        f"{config_dict['sae_weights_path']}"
+    )
+    config_dict["output_dir"] = (
+        f"output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L{lora_layers}"
+    )
+    print(
+        f"Inferred output_dir from lora_layers={lora_layers}: "
+        f"{config_dict['output_dir']}"
+    )
+
     parser = HfArgumentParser(
         (ModelArguments, DataArguments, TrainingArguments, CustomArguments)
     )
-    if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
-        json_file = os.path.abspath(sys.argv[1])
-        with open(json_file) as f:
-            config_dict = json.load(f)
-
-        # Infer sae_weights_path and output_dir from lora_layers if not specified
-        lora_layers = config_dict.get("lora_layers")
-        config_dict["sae_weights_path"] = (
-            f"../remote_data/llm2vec/"
-            f"Llama3_1-8B-Base-L{lora_layers}R-8x/checkpoints/final.safetensors"
-        )
-        print(
-            f"Inferred sae_weights_path from lora_layers={lora_layers}: "
-            f"{config_dict['sae_weights_path']}"
-        )
-        config_dict["output_dir"] = (
-            f"output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L{lora_layers}"
-        )
-        print(
-            f"Inferred output_dir from lora_layers={lora_layers}: "
-            f"{config_dict['output_dir']}"
-        )
-
-        model_args, data_args, training_args, custom_args = parser.parse_dict(
-            config_dict
-        )
-    else:
-        (
-            model_args,
-            data_args,
-            training_args,
-            custom_args,
-        ) = parser.parse_args_into_dataclasses()
+    # JSON values become defaults; CLI args in remaining_argv override them
+    parser.set_defaults(**config_dict)
+    model_args, data_args, training_args, custom_args = (
+        parser.parse_args_into_dataclasses(args=remaining_argv)
+    )
 
     if training_args.gradient_checkpointing:
         training_args.gradient_checkpointing_kwargs = {"use_reentrant": False}

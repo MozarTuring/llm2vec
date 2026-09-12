@@ -18,9 +18,10 @@ CUDA_VISIBLE_DEVICES=1
 # JWM_RUN_COMMAND="python experiments/reranker.py rerank ${JWM_DATA_DIR}/msmarco_hard_negatives_v2_parts --queries-per-batch 2 --output ${JWM_DATA_DIR}/reranker_parts"
 
 JWM_RUN_COMMAND="python experiments/run_layerwise_finetune.py \
-    train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json \
-    --hard_negatives_file ${JWM_DATA_DIR}/reranked_parts/ \
-    --output_dir ${JWM_DATA_DIR}/output/layerwise/"
+    --config train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json \
+    --hard_negatives_file /home/jinma/project_remote_jwm/remote_data/llm2vec/reranked_parts/ \
+    --output_dir /home/jinma/project_remote_jwm/remote_data/llm2vec/output/layerwise/"
+
 
 # JWM_RUN_COMMAND="python experiments/diag_sae.py"
 
