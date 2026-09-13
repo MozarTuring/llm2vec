@@ -447,12 +447,10 @@ if __name__ == "__main__":
         print(f"Inferred sae_weights_path: {args.sae_weights_path}")
 
     # Validate required args
-    required = ["model_name_or_path", "sae_weights_path", "lora_layers",
-                 "hard_negatives_file", "num_hard_negatives", "temperature",
-                 "lambda_q", "lambda_d", "max_seq_length"]
+    required = ["model_name_or_path", "sae_weights_path", "lora_layers"]
     missing = [k for k in required if getattr(args, k, None) is None]
     if missing:
-        parser.error(f"Missing required arguments (set via --config or CLI): {missing}")
+        parser.error(f"Missing required arguments (set via config or CLI): {missing}")
 
     import traceback
     try:
@@ -465,13 +463,16 @@ if __name__ == "__main__":
             max_length=args.max_length,
         )
 
-        verify_loss(encoder, args.hard_negatives_file, args.num_hard_negatives,
-                    args.temperature, args.lambda_q, args.lambda_d, args.max_seq_length)
-        gc.collect()
-        torch.cuda.empty_cache()
-        if torch.cuda.is_available():
-            free, total = torch.cuda.mem_get_info()
-            print(f"After verify_loss cleanup: {free/1024**3:.1f}GB free / {total/1024**3:.1f}GB total")
+        if args.hard_negatives_file is not None:
+            verify_loss(encoder, args.hard_negatives_file, args.num_hard_negatives,
+                        args.temperature, args.lambda_q, args.lambda_d, args.max_seq_length)
+            gc.collect()
+            torch.cuda.empty_cache()
+            if torch.cuda.is_available():
+                free, total = torch.cuda.mem_get_info()
+                print(f"After verify_loss cleanup: {free/1024**3:.1f}GB free / {total/1024**3:.1f}GB total")
+        else:
+            print("Skipping verify_loss (no --hard_negatives_file provided)")
 
         model = MTEBWrapper(encoder, query_top_k=args.query_top_k,
                             doc_top_k=args.doc_top_k, max_length=args.max_length)
