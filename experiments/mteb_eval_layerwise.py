@@ -399,13 +399,11 @@ MTEB_ENG_V2_RETRIEVAL = [
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default=None,
-                        help="Path to training config JSON. Values are used as defaults; "
-                             "CLI args override them.")
+    parser.add_argument("--trained_checkpoint_path", type=str, required=True,
+                        help="Path to trained checkpoint dir (contains train config JSON).")
     parser.add_argument("--model_name_or_path", type=str)
     parser.add_argument("--peft_model_name_or_path", type=str)
     parser.add_argument("--sae_weights_path", type=str)
-    parser.add_argument("--trained_checkpoint_path", type=str)
     parser.add_argument("--lora_layers", type=int)
     parser.add_argument("--task_name", type=str, nargs="*")
     parser.add_argument("--task_type", type=str, choices=["retrieval", "all"])
@@ -421,18 +419,23 @@ if __name__ == "__main__":
     parser.add_argument("--max_seq_length", type=int)
     args = parser.parse_args()
 
-    # Load config JSON and fill in any unset args
-    if args.config is not None:
-        with open(args.config) as f:
-            cfg = json.load(f)
-        config_keys = [
-            "model_name_or_path", "peft_model_name_or_path", "lora_layers",
-            "hard_negatives_file", "num_hard_negatives", "temperature",
-            "lambda_q", "lambda_d", "max_seq_length",
-        ]
-        for key in config_keys:
-            if getattr(args, key, None) is None and key in cfg:
-                setattr(args, key, cfg[key])
+    # Auto-discover train config JSON from checkpoint dir
+    config_candidates = [f for f in os.listdir(args.trained_checkpoint_path)
+                         if f.endswith(".json") and f != "adapter_config.json"]
+    if not config_candidates:
+        parser.error(f"No config JSON found in {args.trained_checkpoint_path}")
+    config_path = os.path.join(args.trained_checkpoint_path, config_candidates[0])
+    print(f"Loading train config from {config_path}")
+    with open(config_path) as f:
+        cfg = json.load(f)
+    config_keys = [
+        "model_name_or_path", "peft_model_name_or_path", "lora_layers",
+        "hard_negatives_file", "num_hard_negatives", "temperature",
+        "lambda_q", "lambda_d", "max_seq_length",
+    ]
+    for key in config_keys:
+        if getattr(args, key, None) is None and key in cfg:
+            setattr(args, key, cfg[key])
 
     # Infer sae_weights_path from lora_layers if not provided
     if args.sae_weights_path is None and args.lora_layers is not None:
