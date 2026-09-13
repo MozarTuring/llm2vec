@@ -514,17 +514,20 @@ def main():
 
     # Infer sae_weights_path and output_dir from lora_layers
     lora_layers = config_dict.get("lora_layers")
-    config_dict["sae_weights_path"] = (
-        f"../remote_data/llm2vec/"
-        f"Llama3_1-8B-Base-L{lora_layers}R-8x/checkpoints/final.safetensors"
+    data_dir = os.environ["JWM_DATA_DIR"]
+    config_dict["sae_weights_path"] = os.path.join(
+        data_dir,
+        f"llm2vec/Llama3_1-8B-Base-L{lora_layers}R-8x/checkpoints/final.safetensors",
     )
     print(
         f"Inferred sae_weights_path from lora_layers={lora_layers}: "
         f"{config_dict['sae_weights_path']}"
     )
-    config_dict["output_dir"] = (
-        f"output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L{lora_layers}"
+    inferred_output_dir = os.path.join(
+        data_dir,
+        f"output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L{lora_layers}",
     )
+    config_dict["output_dir"] = inferred_output_dir
     print(
         f"Inferred output_dir from lora_layers={lora_layers}: "
         f"{config_dict['output_dir']}"
@@ -546,6 +549,9 @@ def main():
     model_args, data_args, training_args, custom_args = (
         parser.parse_args_into_dataclasses(args=remaining_argv)
     )
+
+    # Force inferred output_dir (no CLI override)
+    training_args.output_dir = inferred_output_dir
 
     # Copy the config file to output dir
     os.makedirs(training_args.output_dir, exist_ok=True)

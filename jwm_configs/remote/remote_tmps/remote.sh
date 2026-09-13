@@ -1,6 +1,6 @@
 
 set -e
-# change the following vars based on your preference
+# change the following vars based on your preference, and then make sure this repo is cloned to /home/jinma/project_remote_jwm/llm2vec_jingwei
 export RUN_DIR_HOME=/home/jinma
 export RUN_PROJ=llm2vec_jingwei
 export JWM_DATA_DIR=/home/jinma/project_remote_jwm/remote_data/llm2vec
@@ -15,4 +15,5 @@ export JWM_SLURM_FILE=slurm.sh
 export JWM_build_flashattn=
 export JWM_NOTEBOOK=
 export CUDA_VISIBLE_DEVICES=1
-export JWM_RUN_COMMAND="python experiments/run_layerwise_finetune.py     --config train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json     --hard_negatives_file /home/jinma/project_remote_jwm/remote_data/llm2vec/reranker_parts/     --output_dir /home/jinma/project_remote_jwm/remote_data/llm2vec/output/layerwise/"
+export JWM_TASK_NAMES="ArguAna CQADupstackGamingRetrieval CQADupstackUnixRetrieval ClimateFEVERHardNegatives FEVERHardNegatives FiQA2018 HotpotQAHardNegatives SCIDOCS TRECCOVID Touche2020Retrieval.v3"
+export JWM_RUN_COMMAND="python experiments/mteb_eval_layerwise.py   --trained_checkpoint_path ${JWM_DATA_DIR}/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L0/checkpoint-3929   --query_top_k 40   --doc_top_k 400   --output_dir results   --max_length 1024   --task_name ${JWM_TASK_NAMES}"

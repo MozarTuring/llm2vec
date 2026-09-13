@@ -419,12 +419,13 @@ if __name__ == "__main__":
     parser.add_argument("--max_seq_length", type=int)
     args = parser.parse_args()
 
-    # Auto-discover train config JSON from checkpoint dir
-    config_candidates = [f for f in os.listdir(args.trained_checkpoint_path)
-                         if f.endswith(".json") and f != "adapter_config.json"]
+    # Auto-discover train config JSON from parent of checkpoint dir
+    parent_dir = os.path.dirname(os.path.normpath(args.trained_checkpoint_path))
+    config_candidates = [f for f in os.listdir(parent_dir)
+                         if f.endswith(".json")]
     if not config_candidates:
-        parser.error(f"No config JSON found in {args.trained_checkpoint_path}")
-    config_path = os.path.join(args.trained_checkpoint_path, config_candidates[0])
+        parser.error(f"No config JSON found in {parent_dir}")
+    config_path = os.path.join(parent_dir, config_candidates[0])
     print(f"Loading train config from {config_path}")
     with open(config_path) as f:
         cfg = json.load(f)
