@@ -7,4 +7,4 @@ export JWM_SLURM_FILE=slurm.sh
 export JWM_build_flashattn=
 export JWM_NOTEBOOK=
 export CUDA_VISIBLE_DEVICES=1
-export JWM_RUN_COMMAND="python experiments/run_layerwise_finetune.py     --config train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json     --hard_negatives_file /home/jinma/project_remote_jwm/remote_data/llm2vec/reranker_parts/
+export JWM_RUN_COMMAND="python experiments/run_layerwise_finetune.py     --config train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json     --hard_negatives_file /home/jinma/project_remote_jwm/remote_data/llm2vec/reranker_parts/"

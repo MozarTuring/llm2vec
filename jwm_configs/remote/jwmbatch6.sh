@@ -19,7 +19,7 @@ CUDA_VISIBLE_DEVICES=1
 
 JWM_RUN_COMMAND="python experiments/run_layerwise_finetune.py \
     --config train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json \
-    --hard_negatives_file /home/jinma/project_remote_jwm/remote_data/llm2vec/reranker_parts/
+    --hard_negatives_file /home/jinma/project_remote_jwm/remote_data/llm2vec/reranker_parts/"
 
 
 # JWM_RUN_COMMAND="python experiments/diag_sae.py"
