@@ -179,10 +179,9 @@ class LayerwiseEncoder:
                 hidden_states = hidden_states * self.sae_norm_scale
                 sae_out = self.sae(hidden_states)
                 del hidden_states  # free before SAE intermediates pile up
-                # SAE activation: JumpReLU + TopK (both used during SAE pretraining)
+                # SAE activation: JumpReLU only (TopK was for SAE pretraining;
+                # SPLARE uses FLOPS loss + sequence-level Top-K at inference)
                 sae_out = torch.where(sae_out > self.jump_relu_threshold, sae_out, torch.zeros_like(sae_out))
-                topk_vals, topk_idx = sae_out.topk(self.sae_top_k, dim=-1)
-                sae_out = torch.zeros_like(sae_out).scatter_(-1, topk_idx, topk_vals)
                 sae_out = torch.log(1 + sae_out)
                 # Mask padding before max-pool (all activations ≥ 0, so zeroing works)
                 sae_out = sae_out * inputs["attention_mask"].unsqueeze(-1)
@@ -336,11 +335,11 @@ def verify_loss(encoder, hard_negatives_file, num_hard_negatives, temperature,
             # Dataset-wise normalization for Llama Scope SAE
             hidden_states = hidden_states * encoder.sae_norm_scale
             sae_out = encoder.sae(hidden_states)
-            # JumpReLU + TopK (SAE activation from hyperparams.json)
+            # JumpReLU only (no per-token TopK during SPLARE training/eval)
             sae_out = torch.where(sae_out > encoder.jump_relu_threshold, sae_out, torch.zeros_like(sae_out))
-            topk_vals, topk_idx = sae_out.topk(encoder.sae_top_k, dim=-1)
-            sae_out = torch.zeros_like(sae_out).scatter_(-1, topk_idx, topk_vals)
             sae_out = torch.log(1 + sae_out)
+            # Mask padding before max-pool
+            sae_out = sae_out * tg["attention_mask"].unsqueeze(-1)
             pooled, _ = sae_out.max(dim=1)
             pooled_list.append(pooled)
 
