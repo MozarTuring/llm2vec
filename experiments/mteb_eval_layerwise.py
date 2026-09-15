@@ -184,6 +184,8 @@ class LayerwiseEncoder:
                 topk_vals, topk_idx = sae_out.topk(self.sae_top_k, dim=-1)
                 sae_out = torch.zeros_like(sae_out).scatter_(-1, topk_idx, topk_vals)
                 sae_out = torch.log(1 + sae_out)
+                # Mask padding before max-pool (all activations ≥ 0, so zeroing works)
+                sae_out = sae_out * inputs["attention_mask"].unsqueeze(-1)
                 pooled, _ = sae_out.max(dim=1)
                 if top_k is not None:
                     vals, idx = pooled.topk(top_k, dim=-1)
