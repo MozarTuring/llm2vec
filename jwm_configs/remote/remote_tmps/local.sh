@@ -7,4 +7,4 @@ export JWM_SLURM_FILE=slurm.sh
 export JWM_build_flashattn=
 export JWM_NOTEBOOK=
 export CUDA_VISIBLE_DEVICES=1
-export JWM_RUN_COMMAND="python experiments/check_sae_threshold.py     --sae_weights_path ${JWM_DATA_DIR}/Llama3_1-8B-Base-L0R-8x/checkpoints/final.safetensors"
+export JWM_RUN_COMMAND="python experiments/check_postprocessing.py $JWM_DATA_DIR/Llama3_1-8B-Base-L0R-8x"

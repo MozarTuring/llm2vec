@@ -21,11 +21,12 @@ CUDA_VISIBLE_DEVICES=1
 #     --config train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json \
 #     --hard_negatives_file /home/jinma/project_remote_jwm/remote_data/llm2vec/reranker_parts/"
 
+JWM_RUN_COMMAND="python experiments/check_postprocessing.py $JWM_DATA_DIR/Llama3_1-8B-Base-L0R-8x"
 
 # JWM_RUN_COMMAND="python experiments/diag_sae.py"
 
-JWM_RUN_COMMAND="python experiments/check_sae_threshold.py \
-    --sae_weights_path ${JWM_DATA_DIR}/Llama3_1-8B-Base-L0R-8x/checkpoints/final.safetensors"
+# JWM_RUN_COMMAND="python experiments/check_sae_threshold.py \
+#     --sae_weights_path ${JWM_DATA_DIR}/Llama3_1-8B-Base-L0R-8x/checkpoints/final.safetensors"
 
 # BEIR 13 tasks (Table 5 in paper)
 # JWM_TASK_NAMES="SciFact ArguAna ClimateFEVER DBPedia FEVER FiQA2018 HotpotQA NFCorpus NQ QuoraRetrieval SCIDOCS TRECCOVID Touche2020"

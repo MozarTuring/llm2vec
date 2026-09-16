@@ -155,16 +155,9 @@ class LayerwiseModel(nn.Module):
             attention_mask=sentence_feature["attention_mask"],
         )
         hidden_states = outputs[0]
-        # Dataset-wise normalization for Llama Scope SAE:
-        # scale = sqrt(d_model) / activation_norm (constant, not per-sample)
         hidden_states = hidden_states * self.sae_norm_scale
         sae_out = self.sae(hidden_states)
-        # SAE activation: JumpReLU only (TopK was used during SAE pretraining
-        # but SPLARE uses only JumpReLU; sparsity comes from FLOPS loss +
-        # sequence-level Top-K at inference)
-        sae_out = torch.where(sae_out > self.jump_relu_threshold, sae_out, torch.zeros_like(sae_out))
-        sae_out = torch.log(1 + sae_out)
-        # Mask padding before max-pool (all activations ≥ 0, so zeroing works)
+        sae_out = torch.log(1 + torch.relu(sae_out))
         sae_out = sae_out * sentence_feature["attention_mask"].unsqueeze(-1)
         pooled, _ = sae_out.max(dim=1)
         return pooled, sae_out
@@ -195,7 +188,8 @@ class LayerwiseModel(nn.Module):
         kl_loss = nn.functional.kl_div(log_pred, target_probs, reduction="batchmean")
 
         query_flops = self.flops_loss(pooled[0])
-        doc_flops = sum(self.flops_loss(p) for p in pooled[1:]) / len(pooled[1:])
+        all_docs = torch.cat(pooled[1:], dim=0)
+        doc_flops = self.flops_loss(all_docs)
 
         loss = kl_loss + self.lambda_q * query_flops + self.lambda_d * doc_flops
         return (loss,)

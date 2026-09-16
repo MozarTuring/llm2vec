@@ -179,10 +179,7 @@ class LayerwiseEncoder:
                 hidden_states = hidden_states * self.sae_norm_scale
                 sae_out = self.sae(hidden_states)
                 del hidden_states  # free before SAE intermediates pile up
-                # SAE activation: JumpReLU only (TopK was for SAE pretraining;
-                # SPLARE uses FLOPS loss + sequence-level Top-K at inference)
-                sae_out = torch.where(sae_out > self.jump_relu_threshold, sae_out, torch.zeros_like(sae_out))
-                sae_out = torch.log(1 + sae_out)
+                sae_out = torch.log(1 + torch.relu(sae_out))
                 # Mask padding before max-pool (all activations ≥ 0, so zeroing works)
                 sae_out = sae_out * inputs["attention_mask"].unsqueeze(-1)
                 pooled, _ = sae_out.max(dim=1)
@@ -335,9 +332,7 @@ def verify_loss(encoder, hard_negatives_file, num_hard_negatives, temperature,
             # Dataset-wise normalization for Llama Scope SAE
             hidden_states = hidden_states * encoder.sae_norm_scale
             sae_out = encoder.sae(hidden_states)
-            # JumpReLU only (no per-token TopK during SPLARE training/eval)
-            sae_out = torch.where(sae_out > encoder.jump_relu_threshold, sae_out, torch.zeros_like(sae_out))
-            sae_out = torch.log(1 + sae_out)
+            sae_out = torch.log(1 + torch.relu(sae_out))
             # Mask padding before max-pool
             sae_out = sae_out * tg["attention_mask"].unsqueeze(-1)
             pooled, _ = sae_out.max(dim=1)
@@ -356,7 +351,8 @@ def verify_loss(encoder, hard_negatives_file, num_hard_negatives, temperature,
         kl_loss = nn.functional.kl_div(log_pred, target_probs, reduction="batchmean")
 
         query_flops = torch.sum(query_enc.mean(dim=0) ** 2)
-        doc_flops = sum(torch.sum(p.mean(dim=0) ** 2) for p in pooled_list[1:]) / len(pooled_list[1:])
+        all_docs = torch.cat(pooled_list[1:], dim=0)
+        doc_flops = torch.sum(all_docs.mean(dim=0) ** 2)
 
         loss = kl_loss + lambda_q * query_flops + lambda_d * doc_flops
 
@@ -411,9 +407,9 @@ if __name__ == "__main__":
     parser.add_argument("--task_name", type=str, nargs="*")
     parser.add_argument("--task_type", type=str, choices=["retrieval", "all"])
     parser.add_argument("--output_dir", type=str)
-    parser.add_argument("--query_top_k", type=int)
-    parser.add_argument("--doc_top_k", type=int)
-    parser.add_argument("--max_length", type=int)
+    parser.add_argument("--query_top_k", type=int, default=40)
+    parser.add_argument("--doc_top_k", type=int, default=400)
+    parser.add_argument("--max_length", type=int, default=1024)
     parser.add_argument("--hard_negatives_file", type=str)
     parser.add_argument("--num_hard_negatives", type=int)
     parser.add_argument("--temperature", type=float)
