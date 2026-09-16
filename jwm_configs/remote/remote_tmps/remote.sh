@@ -15,5 +15,4 @@ export JWM_SLURM_FILE=slurm.sh
 export JWM_build_flashattn=
 export JWM_NOTEBOOK=
 export CUDA_VISIBLE_DEVICES=1
-export JWM_TASK_NAMES="ArguAna CQADupstackGamingRetrieval CQADupstackUnixRetrieval ClimateFEVERHardNegatives FEVERHardNegatives FiQA2018 HotpotQAHardNegatives SCIDOCS TRECCOVID Touche2020Retrieval.v3"
-export JWM_RUN_COMMAND="python experiments/mteb_eval_layerwise.py   --trained_checkpoint_path ${JWM_DATA_DIR}/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L0/checkpoint-3929   --query_top_k 40   --doc_top_k 400   --output_dir results   --max_length 1024   --task_name ${JWM_TASK_NAMES}"
+export JWM_RUN_COMMAND="python experiments/check_postprocessing.py $JWM_DATA_DIR/Llama3_1-8B-Base-L0R-8x"

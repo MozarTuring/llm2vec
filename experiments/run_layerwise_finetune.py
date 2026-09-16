@@ -188,8 +188,7 @@ class LayerwiseModel(nn.Module):
         kl_loss = nn.functional.kl_div(log_pred, target_probs, reduction="batchmean")
 
         query_flops = self.flops_loss(pooled[0])
-        all_docs = torch.cat(pooled[1:], dim=0)
-        doc_flops = self.flops_loss(all_docs)
+        doc_flops = sum(self.flops_loss(p) for p in pooled[1:]) / len(pooled[1:])
 
         loss = kl_loss + self.lambda_q * query_flops + self.lambda_d * doc_flops
         return (loss,)

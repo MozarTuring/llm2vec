@@ -351,8 +351,7 @@ def verify_loss(encoder, hard_negatives_file, num_hard_negatives, temperature,
         kl_loss = nn.functional.kl_div(log_pred, target_probs, reduction="batchmean")
 
         query_flops = torch.sum(query_enc.mean(dim=0) ** 2)
-        all_docs = torch.cat(pooled_list[1:], dim=0)
-        doc_flops = torch.sum(all_docs.mean(dim=0) ** 2)
+        doc_flops = sum(torch.sum(p.mean(dim=0) ** 2) for p in pooled_list[1:]) / len(pooled_list[1:])
 
         loss = kl_loss + lambda_q * query_flops + lambda_d * doc_flops
 
