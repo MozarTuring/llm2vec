@@ -1,13 +1,13 @@
 
 set -e
-# change the following vars based on your preference, and then make sure this repo is cloned to /home/jinma/project_remote_jwm/llm2vec_jingwei
-export RUN_DIR_HOME=/home/jinma
+# change the following vars based on your preference, and then make sure this repo is cloned to /nobackup/proj/disk/naiss2026-3-658/personal/jinma63/project_remote_jwm/llm2vec_jingwei
+export RUN_DIR_HOME=/nobackup/proj/disk/naiss2026-3-658/personal/jinma63
 export RUN_PROJ=llm2vec_jingwei
-export JWM_DATA_DIR=/home/jinma/project_remote_jwm/remote_data/llm2vec
+export JWM_DATA_DIR=/nobackup/proj/disk/naiss2026-3-658/personal/jinma63/project_remote_jwm/remote_data/llm2vec
 
 cd ${RUN_DIR_HOME}/project_remote_jwm/${RUN_PROJ}
 export JWM_PYTHON="3.10"
-export JWM_SERVER_NAME=greatrawr
+export JWM_SERVER_NAME=arrhenius
 export JWM_GPU_NUM=1
 export JWM_NODES_NUM=1
 export JWM_RUN_TIME="1-00:00:00"
