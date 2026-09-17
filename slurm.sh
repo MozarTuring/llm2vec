@@ -12,6 +12,7 @@ if [[ "${JWM_ARCH}" == "aarch64" ]]; then
         mteb \
         ir_datasets \
         huggingface_hub \
-        ijson
+        ijson \
+        tomli
     pip install --no-deps -e .
 fi

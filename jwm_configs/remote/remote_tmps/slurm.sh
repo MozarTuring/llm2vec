@@ -63,6 +63,23 @@ if [[ -n ${JWM_build_flashattn} ]]; then
 fi
 
 
+if [[ "${JWM_ARCH}" == "aarch64" ]]; then
+    pip install --no-index --find-links "${_wheel_dir}" \
+        torch \
+        ninja \
+        "datasets==3.6.0" \
+        seqeval \
+        jupyterlab \
+        sentence_transformers \
+        sentencepiece \
+        protobuf \
+        "peft==0.12.0" \
+        mteb \
+        ir_datasets \
+        huggingface_hub \
+        ijson
+    pip install --no-deps -e .
+fi
 # Copy LIBRARY_PATH to LD_LIBRARY_PATH, but strip stubs dirs —
 # CUDA module's stubs/lib64 has fake libnvidia-ml.so/libcuda.so
 # that shadow the real driver and break GPU init.
