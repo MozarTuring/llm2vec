@@ -9,6 +9,9 @@ JWM_SLURM_FILE=slurm.sh
 JWM_build_flashattn=
 JWM_NOTEBOOK=
 
+MEM_PER_TASK="$((30 * JWM_GPU_NUM))G"
+CPUS_PER_TASK=$((8 * JWM_GPU_NUM))
+
 CUDA_VISIBLE_DEVICES=1
 
 # JWM_RUN_COMMAND="python experiments/hard_negatives.py --top-k 1000 --num-top 50 --num-random 50 --output ${JWM_DATA_DIR}/msmarco_hard_negatives_v2.json --query-batch-size 8192"

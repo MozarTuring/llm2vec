@@ -18,35 +18,35 @@
 # pip install ijson
 
 if [[ "${JWM_ARCH}" == "aarch64" ]]; then
-    _wheel_dir=${JWM_WHEELS}${JWM_ARCH}
+    export _wheel_dir=${JWM_WHEELS}${JWM_ARCH}
     PLATFORM="manylinux2014_aarch64"
 
     mkdir -p "${_wheel_dir}"
 
-    pip download \
-        --platform "${PLATFORM}" \
-        --python-version "${JWM_PYTHON}" \
-        --only-binary=:all: \
-        -d "${_wheel_dir}" \
-        torch --index-url https://download.pytorch.org/whl/cu128
-
-    pip download \
-        --platform "${PLATFORM}" \
-        --python-version "${JWM_PYTHON}" \
-        --only-binary=:all: \
-        -d "${_wheel_dir}" \
-        ninja \
-        "datasets==3.6.0" \
-        seqeval \
-        jupyterlab \
-        sentence_transformers \
-        sentencepiece \
-        protobuf \
-        "peft==0.12.0" \
-        mteb \
-        ir_datasets \
-        huggingface_hub \
-        ijson
+    # pip download \
+    #     --platform "${PLATFORM}" \
+    #     --python-version "${JWM_PYTHON}" \
+    #     --only-binary=:all: \
+    #     -d "${_wheel_dir}" \
+    #     torch --index-url https://download.pytorch.org/whl/cu128
+    #
+    # pip download \
+    #     --platform "${PLATFORM}" \
+    #     --python-version "${JWM_PYTHON}" \
+    #     --only-binary=:all: \
+    #     -d "${_wheel_dir}" \
+    #     ninja \
+    #     "datasets==3.6.0" \
+    #     seqeval \
+    #     jupyterlab \
+    #     sentence_transformers \
+    #     sentencepiece \
+    #     protobuf \
+    #     "peft==0.12.0" \
+    #     mteb \
+    #     ir_datasets \
+    #     huggingface_hub \
+    #     ijson
 
 fi
 
