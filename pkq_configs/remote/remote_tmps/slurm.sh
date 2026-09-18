@@ -77,7 +77,8 @@ if [[ "${JWM_ARCH}" == "aarch64" ]]; then
         mteb \
         ir_datasets \
         huggingface_hub \
-        ijson
+        ijson \
+        tomli
     pip install --no-deps -e .
 fi
 # Copy LIBRARY_PATH to LD_LIBRARY_PATH, but strip stubs dirs —

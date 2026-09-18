@@ -62,30 +62,31 @@ if [[ "${JWM_ARCH}" == "aarch64" ]]; then
 
     mkdir -p "${_wheel_dir}"
 
-    # pip download \
-    #     --platform "${PLATFORM}" \
-    #     --python-version "${JWM_PYTHON}" \
-    #     --only-binary=:all: \
-    #     -d "${_wheel_dir}" \
-    #     torch --index-url https://download.pytorch.org/whl/cu128
-    #
-    # pip download \
-    #     --platform "${PLATFORM}" \
-    #     --python-version "${JWM_PYTHON}" \
-    #     --only-binary=:all: \
-    #     -d "${_wheel_dir}" \
-    #     ninja \
-    #     "datasets==3.6.0" \
-    #     seqeval \
-    #     jupyterlab \
-    #     sentence_transformers \
-    #     sentencepiece \
-    #     protobuf \
-    #     "peft==0.12.0" \
-    #     mteb \
-    #     ir_datasets \
-    #     huggingface_hub \
-    #     ijson
+    pip download \
+        --platform "${PLATFORM}" \
+        --python-version "${JWM_PYTHON}" \
+        --only-binary=:all: \
+        -d "${_wheel_dir}" \
+        torch --index-url https://download.pytorch.org/whl/cu128
+
+    pip download \
+        --platform "${PLATFORM}" \
+        --python-version "${JWM_PYTHON}" \
+        --only-binary=:all: \
+        -d "${_wheel_dir}" \
+        ninja \
+        "datasets==3.6.0" \
+        seqeval \
+        jupyterlab \
+        sentence_transformers \
+        sentencepiece \
+        protobuf \
+        "peft==0.12.0" \
+        mteb \
+        ir_datasets \
+        huggingface_hub \
+        ijson \
+        tomli
 
 fi
 
@@ -100,4 +101,4 @@ fi
 # hf download "naver/trecdl22-crossencoder-debertav3" \
 #   --include "*" \
 #   --local-dir "${JWM_DATA_DIR}/hf_models/naver/trecdl22-crossencoder-debertav3"
-sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=jwmlogs/20260917_221254/job-%j.out --error=jwmlogs/20260917_221254/job-%j.out  --gpus=1 --cpus-per-task=8 --mem=30G  -A naiss2026-3-658-gpu  --partition=gpu jwm_configs/remote/remote_tmps/slurm.sh
+sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=jwmlogs/20260918_082342/job-%j.out --error=jwmlogs/20260918_082342/job-%j.out  --gpus=1 --cpus-per-task=8 --mem=30G  -A naiss2026-3-658-gpu  --partition=gpu jwm_configs/remote/remote_tmps/slurm.sh

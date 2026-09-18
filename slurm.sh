@@ -13,6 +13,7 @@ if [[ "${JWM_ARCH}" == "aarch64" ]]; then
         ir_datasets \
         huggingface_hub \
         ijson \
-        tomli
+        tomli \
+        overrides
     pip install --no-deps -e .
 fi
