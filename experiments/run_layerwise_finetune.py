@@ -517,9 +517,11 @@ def main():
             if os.path.exists(resolved):
                 print(f"Resolved {key}: {val} -> {resolved}")
                 config_dict[key] = resolved
-    config_dict["sae_weights_path"] = os.path.join(
-        data_dir,
-        f"hf_models/OpenMOSS-Team/Llama3_1-8B-Base-LXR-8x/Llama3_1-8B-Base-L{lora_layers}R-8x/checkpoints/final.safetensors",
+    from huggingface_hub import hf_hub_download
+    config_dict["sae_weights_path"] = hf_hub_download(
+        "OpenMOSS-Team/Llama3_1-8B-Base-LXR-8x",
+        f"Llama3_1-8B-Base-L{lora_layers}R-8x/checkpoints/final.safetensors",
+        local_files_only=True,
     )
     print(
         f"Inferred sae_weights_path from lora_layers={lora_layers}: "

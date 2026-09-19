@@ -450,14 +450,12 @@ if __name__ == "__main__":
 
     # Infer sae_weights_path from lora_layers if not provided
     if args.sae_weights_path is None and args.lora_layers is not None:
-        sae_rel = (
-            f"hf_models/OpenMOSS-Team/Llama3_1-8B-Base-LXR-8x/"
-            f"Llama3_1-8B-Base-L{args.lora_layers}R-8x/checkpoints/final.safetensors"
+        from huggingface_hub import hf_hub_download
+        args.sae_weights_path = hf_hub_download(
+            "OpenMOSS-Team/Llama3_1-8B-Base-LXR-8x",
+            f"Llama3_1-8B-Base-L{args.lora_layers}R-8x/checkpoints/final.safetensors",
+            local_files_only=True,
         )
-        if data_dir:
-            args.sae_weights_path = os.path.join(data_dir, sae_rel)
-        else:
-            args.sae_weights_path = sae_rel
         print(f"Inferred sae_weights_path: {args.sae_weights_path}")
 
     # Validate required args
