@@ -39,6 +39,25 @@ class SqrtDNorm(nn.Module):
         return hidden_states * (dim ** 0.5) / hidden_states.norm(p=2, dim=-1, keepdim=True).clamp(min=1e-8)
 
 
+class EncodeModule(nn.Module):
+    """Wraps backbone + SAE + pooling for DataParallel compatibility."""
+
+    def __init__(self, backbone, sae, sae_norm_scale):
+        super().__init__()
+        self.backbone = backbone
+        self.sae = sae
+        self.sae_norm_scale = sae_norm_scale
+
+    def forward(self, input_ids, attention_mask):
+        outputs = self.backbone(input_ids=input_ids, attention_mask=attention_mask)
+        hidden_states = outputs[0] * self.sae_norm_scale
+        sae_out = self.sae(hidden_states)
+        sae_out = torch.log(1 + torch.relu(sae_out))
+        sae_out = sae_out * attention_mask.unsqueeze(-1)
+        pooled, _ = sae_out.max(dim=1)
+        return pooled
+
+
 class LayerwiseEncoder:
     def __init__(self, model_name_or_path, peft_model_name_or_path, sae_weights_path,
                  lora_layers, trained_checkpoint_path=None, max_length=1024,
@@ -80,7 +99,6 @@ class LayerwiseEncoder:
         if trained_checkpoint_path is not None:
             backbone = PeftModel.from_pretrained(backbone, trained_checkpoint_path)
 
-        self.backbone = backbone
         with safe_open(sae_weights_path, framework="pt") as f:
             encoder_weight = f.get_tensor("encoder.weight")
             encoder_bias = f.get_tensor("encoder.bias")
@@ -90,7 +108,6 @@ class LayerwiseEncoder:
             sae.bias.copy_(encoder_bias)
         sae.to(torch_dtype)
         sae.requires_grad_(False)
-        self.sae = sae
 
         # Load SAE hyperparams (JumpReLU threshold, TopK)
         sae_dir = os.path.dirname(os.path.dirname(sae_weights_path))
@@ -101,20 +118,27 @@ class LayerwiseEncoder:
         self.sae_top_k = sae_hyperparams["top_k"]
         activation_norm = sae_hyperparams["dataset_average_activation_norm"]["in"]
         d_model = encoder_weight.shape[1]
-        self.sae_norm_scale = (d_model ** 0.5) / activation_norm
+        sae_norm_scale = (d_model ** 0.5) / activation_norm
         print(f"SAE hyperparams from {sae_hyperparams_path}:")
         print(f"  jump_relu_threshold: {self.jump_relu_threshold}")
         print(f"  top_k: {self.sae_top_k}")
         print(f"  activation_norm: {activation_norm}")
         print(f"  norm_activation: {sae_hyperparams.get('norm_activation', 'unknown')}")
-        print(f"  sae_norm_scale: {self.sae_norm_scale:.4f}")
+        print(f"  sae_norm_scale: {sae_norm_scale:.4f}")
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.backbone.to(self.device)
-        self.sae.to(self.device)
+        self.num_gpus = torch.cuda.device_count() if torch.cuda.is_available() else 1
+        encode_module = EncodeModule(backbone, sae, sae_norm_scale)
+        encode_module.to(self.device)
+        encode_module.eval()
+        if self.num_gpus > 1:
+            self.encode_module = nn.DataParallel(encode_module)
+            print(f"Using DataParallel with {self.num_gpus} GPUs")
+        else:
+            self.encode_module = encode_module
+        self.sae_norm_scale = sae_norm_scale
         self.max_length = max_length
-        self.d_sae = self.sae.out_features
-        self.backbone.eval()
+        self.d_sae = sae.out_features
         if torch.cuda.is_available():
             free, total = torch.cuda.mem_get_info()
             print(f"Model on GPU: {free/1024**3:.1f}GB free / {total/1024**3:.1f}GB total")
@@ -169,20 +193,7 @@ class LayerwiseEncoder:
             ).to(self.device)
 
             try:
-                outputs = self.backbone(
-                    input_ids=inputs["input_ids"],
-                    attention_mask=inputs["attention_mask"],
-                )
-                hidden_states = outputs[0]
-                del outputs  # free unscaled hidden_states reference
-                # Dataset-wise normalization for Llama Scope SAE
-                hidden_states = hidden_states * self.sae_norm_scale
-                sae_out = self.sae(hidden_states)
-                del hidden_states  # free before SAE intermediates pile up
-                sae_out = torch.log(1 + torch.relu(sae_out))
-                # Mask padding before max-pool (all activations ≥ 0, so zeroing works)
-                sae_out = sae_out * inputs["attention_mask"].unsqueeze(-1)
-                pooled, _ = sae_out.max(dim=1)
+                pooled = self.encode_module(inputs["input_ids"], inputs["attention_mask"])
                 if top_k is not None:
                     vals, idx = pooled.topk(top_k, dim=-1)
                     pooled = torch.zeros_like(pooled)
@@ -192,7 +203,7 @@ class LayerwiseEncoder:
                 sys.exit(1)
 
             all_chunks.append(pooled.cpu().float().numpy())
-            del inputs, sae_out, pooled
+            del inputs, pooled
             start = batch_end
 
         return np.concatenate(all_chunks, axis=0)
@@ -325,17 +336,7 @@ def verify_loss(encoder, hard_negatives_file, num_hard_negatives, temperature,
     with torch.no_grad():
         pooled_list = []
         for tg in tokenized_groups:
-            outputs = encoder.backbone(
-                input_ids=tg["input_ids"], attention_mask=tg["attention_mask"]
-            )
-            hidden_states = outputs[0]
-            # Dataset-wise normalization for Llama Scope SAE
-            hidden_states = hidden_states * encoder.sae_norm_scale
-            sae_out = encoder.sae(hidden_states)
-            sae_out = torch.log(1 + torch.relu(sae_out))
-            # Mask padding before max-pool
-            sae_out = sae_out * tg["attention_mask"].unsqueeze(-1)
-            pooled, _ = sae_out.max(dim=1)
+            pooled = encoder.encode_module(tg["input_ids"], tg["attention_mask"])
             pooled_list.append(pooled)
 
         query_enc = pooled_list[0]
