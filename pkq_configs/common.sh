@@ -27,9 +27,9 @@
 #   --include "Llama3_1-8B-Base-L26R-8x/*" \
 #   --local-dir "${PKQ_DATA_DIR}/hf_models/OpenMOSS-Team/Llama3_1-8B-Base-LXR-8x"
 
-hf download "OpenMOSS-Team/Llama3_1-8B-Base-LXR-8x" \
-  --include "Llama3_1-8B-Base-L0R-8x/*" \
-  --local-dir "${PKQ_DATA_DIR}/hf_models/OpenMOSS-Team/Llama3_1-8B-Base-LXR-8x"
+# hf download "OpenMOSS-Team/Llama3_1-8B-Base-LXR-8x" \
+#   --include "Llama3_1-8B-Base-L0R-8x/*" \
+#   --local-dir "${PKQ_DATA_DIR}/hf_models/OpenMOSS-Team/Llama3_1-8B-Base-LXR-8x"
 
 # hf download "naver/trecdl22-crossencoder-debertav3" \
 #   --include "*" \

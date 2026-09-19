@@ -14,7 +14,7 @@ export PKQ_RUN_TIME="1-00:00:00"
 export PKQ_SLURM_FILE=slurm.sh
 export PKQ_build_flashattn=
 export PKQ_NOTEBOOK=
-export PKQ_INTERACTIVE=
+export PKQ_INTERACTIVE=1
 export MEM_PER_TASK="$((30 * PKQ_GPU_NUM))G"
 export CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 export CUDA_VISIBLE_DEVICES=1
@@ -26,4 +26,4 @@ if [ -z  ]; then
     export PKQ_WHEELS=/nobackup/proj/disk/naiss2026-3-658/personal/jinma63/pkqwheels/llm2vec_pikaq
 fi
 echo "condaenv path "
-sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkqlogs/20260919_121553/job-%j.out --error=pkqlogs/20260919_121553/job-%j.out  --gpus=1 --cpus-per-task=8 --mem=30G  -A naiss2026-3-658-gpu  --partition=gpu pkq_configs/remote/remote_tmps/slurm.sh
+sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkqlogs/20260919_122605/job-%j.out --error=pkqlogs/20260919_122605/job-%j.out  --gpus=1 --cpus-per-task=8 --mem=30G  -A naiss2026-3-658-gpu  --partition=gpu pkq_configs/remote/remote_tmps/slurm.sh
