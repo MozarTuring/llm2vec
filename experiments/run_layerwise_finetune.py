@@ -519,7 +519,7 @@ def main():
                 config_dict[key] = resolved
     config_dict["sae_weights_path"] = os.path.join(
         data_dir,
-        f"Llama3_1-8B-Base-L{lora_layers}R-8x/checkpoints/final.safetensors",
+        f"hf_models/OpenMOSS-Team/Llama3_1-8B-Base-LXR-8x/Llama3_1-8B-Base-L{lora_layers}R-8x/checkpoints/final.safetensors",
     )
     print(
         f"Inferred sae_weights_path from lora_layers={lora_layers}: "

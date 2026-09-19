@@ -19,14 +19,18 @@
 #
 # pip install --force-reinstall transformers==4.44.2
 
-hf download "meta-llama/Meta-Llama-3.1-8B" --exclude "*.pth" --local-dir "${PKQ_DATA_DIR}/hf_models/meta-llama/Meta-Llama-3.1-8B"
+# hf download "meta-llama/Meta-Llama-3.1-8B" --exclude "*.pth" --local-dir "${PKQ_DATA_DIR}/hf_models/meta-llama/Meta-Llama-3.1-8B"
 
 # hf download Tevatron/msmarco-passage-corpus --repo-type dataset
 
+# hf download "OpenMOSS-Team/Llama3_1-8B-Base-LXR-8x" \
+#   --include "Llama3_1-8B-Base-L26R-8x/*" \
+#   --local-dir "${PKQ_DATA_DIR}/hf_models/OpenMOSS-Team/Llama3_1-8B-Base-LXR-8x"
+
 hf download "OpenMOSS-Team/Llama3_1-8B-Base-LXR-8x" \
-  --include "Llama3_1-8B-Base-L26R-8x/*" \
+  --include "Llama3_1-8B-Base-L0R-8x/*" \
   --local-dir "${PKQ_DATA_DIR}/hf_models/OpenMOSS-Team/Llama3_1-8B-Base-LXR-8x"
 
-hf download "naver/trecdl22-crossencoder-debertav3" \
-  --include "*" \
-  --local-dir "${PKQ_DATA_DIR}/hf_models/naver/trecdl22-crossencoder-debertav3"
+# hf download "naver/trecdl22-crossencoder-debertav3" \
+#   --include "*" \
+#   --local-dir "${PKQ_DATA_DIR}/hf_models/naver/trecdl22-crossencoder-debertav3"
