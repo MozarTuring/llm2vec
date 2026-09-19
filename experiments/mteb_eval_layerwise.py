@@ -437,12 +437,27 @@ if __name__ == "__main__":
         if getattr(args, key, None) is None and key in cfg:
             setattr(args, key, cfg[key])
 
+    # Resolve relative model paths against PKQ_DATA_DIR
+    data_dir = os.environ.get("PKQ_DATA_DIR")
+    if data_dir:
+        for key in ("model_name_or_path", "peft_model_name_or_path"):
+            val = getattr(args, key, None)
+            if val and not os.path.isabs(val):
+                resolved = os.path.join(data_dir, val)
+                if os.path.exists(resolved):
+                    print(f"Resolved {key}: {val} -> {resolved}")
+                    setattr(args, key, resolved)
+
     # Infer sae_weights_path from lora_layers if not provided
     if args.sae_weights_path is None and args.lora_layers is not None:
-        args.sae_weights_path = (
-            f"../remote_data/llm2vec/"
+        sae_rel = (
+            f"hf_models/OpenMOSS-Team/Llama3_1-8B-Base-LXR-8x/"
             f"Llama3_1-8B-Base-L{args.lora_layers}R-8x/checkpoints/final.safetensors"
         )
+        if data_dir:
+            args.sae_weights_path = os.path.join(data_dir, sae_rel)
+        else:
+            args.sae_weights_path = sae_rel
         print(f"Inferred sae_weights_path: {args.sae_weights_path}")
 
     # Validate required args
