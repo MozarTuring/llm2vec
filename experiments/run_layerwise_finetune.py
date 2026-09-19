@@ -510,7 +510,7 @@ def main():
     # Resolve relative model paths against data_dir
     lora_layers = config_dict.get("lora_layers")
     data_dir = os.environ["PKQ_DATA_DIR"]
-    for key in ("model_name_or_path", "peft_model_name_or_path"):
+    for key in ("peft_model_name_or_path",):
         val = config_dict.get(key)
         if val and not os.path.isabs(val):
             resolved = os.path.join(data_dir, val)

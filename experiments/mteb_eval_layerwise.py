@@ -440,7 +440,7 @@ if __name__ == "__main__":
     # Resolve relative model paths against PKQ_DATA_DIR
     data_dir = os.environ.get("PKQ_DATA_DIR")
     if data_dir:
-        for key in ("model_name_or_path", "peft_model_name_or_path"):
+        for key in ("peft_model_name_or_path",):
             val = getattr(args, key, None)
             if val and not os.path.isabs(val):
                 resolved = os.path.join(data_dir, val)
