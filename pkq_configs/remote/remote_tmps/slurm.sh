@@ -31,7 +31,7 @@ bash ${RUN_DIR_HOME}/project_remote_pkq/common_tools_pikaq/resource_usage.sh >pk
 
 echo "TORCH_CUDA_ARCH_LIST ${TORCH_CUDA_ARCH_LIST}"
 
-if [[ -n ${PKQ_build_flashattn} ]]; then
+if [[ -n ${JWM_build_flashattn} ]]; then
     MAX_JOBS=${CPUS_PER_TASK} FLASH_ATTENTION_FORCE_BUILD=TRUE pip install ${PKQ_CONDAENV}/flash_attn_src/flash_attn*.tar.gz --no-build-isolation --no-cache-dir
     echo "flash attn build done"
     exit

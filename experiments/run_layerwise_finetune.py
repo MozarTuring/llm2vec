@@ -507,9 +507,16 @@ def main():
     with open(json_file) as f:
         config_dict = json.load(f)
 
-    # Infer sae_weights_path and output_dir from lora_layers
+    # Resolve relative model paths against data_dir
     lora_layers = config_dict.get("lora_layers")
     data_dir = os.environ["PKQ_DATA_DIR"]
+    for key in ("model_name_or_path", "peft_model_name_or_path"):
+        val = config_dict.get(key)
+        if val and not os.path.isabs(val):
+            resolved = os.path.join(data_dir, val)
+            if os.path.exists(resolved):
+                print(f"Resolved {key}: {val} -> {resolved}")
+                config_dict[key] = resolved
     config_dict["sae_weights_path"] = os.path.join(
         data_dir,
         f"Llama3_1-8B-Base-L{lora_layers}R-8x/checkpoints/final.safetensors",
