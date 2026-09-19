@@ -1,4 +1,4 @@
-if [[ "${JWM_ARCH}" == "aarch64" ]]; then
+if [[ "${PKQ_ARCH}" == "aarch64" ]]; then
     pip install --no-index --find-links "${_wheel_dir}" \
         torch \
         ninja \

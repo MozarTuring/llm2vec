@@ -61,7 +61,7 @@ def split_to_parts(input_file, num_parts, output_dir):
 def rerank_worker(rank, lines, queries_per_batch, tmp_dir):
     """Score (query, passage) pairs for assigned lines on one GPU."""
     device = f"cuda:{rank}"
-    model_name = os.path.join(os.environ["JWM_DATA_DIR"], "hf_models/naver/trecdl22-crossencoder-debertav3")
+    model_name = os.path.join(os.environ["PKQ_DATA_DIR"], "hf_models/naver/trecdl22-crossencoder-debertav3")
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForSequenceClassification.from_pretrained(model_name).eval().to(device)
     print(f"[GPU {rank}] Model loaded, processing {len(lines)} queries "

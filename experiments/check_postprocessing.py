@@ -21,7 +21,7 @@ import torch
 from safetensors.torch import safe_open
 
 sae_dir = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
-    os.environ.get("JWM_DATA_DIR", "."), "Llama3_1-8B-Base-L0R-8x"
+    os.environ.get("PKQ_DATA_DIR", "."), "Llama3_1-8B-Base-L0R-8x"
 )
 ckpt_path = os.path.join(sae_dir, "checkpoints", "final.safetensors")
 hp_path = os.path.join(sae_dir, "hyperparams.json")

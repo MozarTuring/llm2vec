@@ -1,9 +1,6 @@
 """Check SAE encoder bias stats and empirical L0 to determine
 whether jump_relu_threshold needs to be scaled by sae_norm_scale.
 
-Run on remote:
-    python experiments/check_sae_threshold.py \
-        --sae_weights_path /home/jinma/project_remote_jwm/remote_data/llm2vec/Llama3_1-8B-Base-L0R-8x/checkpoints/final.safetensors
 """
 import argparse
 import json

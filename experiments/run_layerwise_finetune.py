@@ -509,7 +509,7 @@ def main():
 
     # Infer sae_weights_path and output_dir from lora_layers
     lora_layers = config_dict.get("lora_layers")
-    data_dir = os.environ["JWM_DATA_DIR"]
+    data_dir = os.environ["PKQ_DATA_DIR"]
     config_dict["sae_weights_path"] = os.path.join(
         data_dir,
         f"Llama3_1-8B-Base-L{lora_layers}R-8x/checkpoints/final.safetensors",

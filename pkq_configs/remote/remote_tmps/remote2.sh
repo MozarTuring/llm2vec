@@ -1,18 +1,7 @@
-export JWM_ARCH="aarch64"
-export JWM_MODULES="Miniforge"
-module load ${JWM_MODULES}
-if [ -z ${JWM_CONDAENV} ]; then
-    export JWM_CONDAENV=${RUN_DIR_HOME}/jwmcondaenv/${RUN_PROJ}
-    export JWM_WHEELS=${RUN_DIR_HOME}/jwmwheels/${RUN_PROJ}
+export PKQ_ARCH="aarch64"
+export PKQ_MODULES="GPU/Miniforge/26.3.2-2-eb GPU/buildtool-easybuild/5.2.1-hpca3ef7d197 CUDA/12.9.1 cuDNN/9.15.0.57-CUDA-12.9.1 cuSPARSELt/0.8.0.4-CUDA-12.9.1"
+if [ -z  ]; then
+    export PKQ_CONDAENV=/nobackup/proj/disk/naiss2026-3-658/personal/pkquser/pkqcondaenv/llm2vec_pikaq
+    export PKQ_WHEELS=/nobackup/proj/disk/naiss2026-3-658/personal/pkquser/pkqwheels/llm2vec_pikaq
 fi
-echo "condaenv path ${JWM_CONDAENV}"
-if [ ! -d ${JWM_CONDAENV} ]; then
-    conda create -p ${JWM_CONDAENV} python=${JWM_PYTHON} -y
-fi
-if [[ -n ${JWM_ARCH} && ! -d ${JWM_CONDAENV}${JWM_ARCH} ]]; then
-    CONDA_SUBDIR=linux-aarch64 conda create -p ${JWM_CONDAENV}${JWM_ARCH} python=${JWM_PYTHON} -y
-fi
-conda activate ${JWM_CONDAENV}
-which python
-python --version
-which pip
+echo "condaenv path "
