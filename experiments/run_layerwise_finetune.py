@@ -701,7 +701,7 @@ def main():
     print(f"\nLayerwiseModel ready:")
     print(f"  Backbone: {num_active} layers (0-{custom_args.lora_layers})")
     print(f"  Hidden size: {hidden_size}")
-    print(f"  LoRA rank: {custom_args.lora_r}, alpha: {2 * custom_args.lora_r}")
+    print(f"  LoRA rank: {custom_args.lora_r}, alpha: {custom_args.lora_r}")
 
     # ── Load dataset ──────────────────────────────────────────
     train_dataset = MSMARCOHardNegDataset(
