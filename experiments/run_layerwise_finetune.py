@@ -156,8 +156,16 @@ class LayerwiseModel(nn.Module):
         )
         hidden_states = outputs[0]
         hidden_states = hidden_states * self.sae_norm_scale
-        sae_out = self.sae(hidden_states)
-        sae_out = torch.log(1 + torch.relu(sae_out))
+        sae_pre = self.sae(hidden_states)
+        if not hasattr(self, "_log_count"):
+            self._log_count = 0
+        if self._log_count < 20 or self._log_count % 200 == 0:
+            frac_pos = (sae_pre > 0).float().mean().item()
+            print(f"[diag step={self._log_count}] sae_pre: mean={sae_pre.mean().item():.4f} "
+                  f"std={sae_pre.std().item():.4f} frac_pos={frac_pos:.4f} "
+                  f"max={sae_pre.max().item():.4f} min={sae_pre.min().item():.4f}")
+        self._log_count += 1
+        sae_out = torch.log(1 + torch.relu(sae_pre))
         sae_out = sae_out * sentence_feature["attention_mask"].unsqueeze(-1)
         pooled, _ = sae_out.max(dim=1)
         return pooled, sae_out
