@@ -694,7 +694,7 @@ def main():
     print(f"  top_k: {sae_top_k}")
     print(f"  activation_norm: {activation_norm}")
     print(f"  norm_activation: {sae_hyperparams.get('norm_activation', 'unknown')}")
-    print(f"  sae_norm_scale: {sae_norm_scale:.4f}")
+    print(f"  sae_norm_scale: {sae_norm_scale}")
 
     task_head = TaskHead(hidden_size)
 
