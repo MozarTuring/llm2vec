@@ -553,6 +553,7 @@ def main():
     temperature = config_dict.pop("temperature")
     lambda_q = config_dict.pop("lambda_q")
     lambda_d = config_dict.pop("lambda_d")
+    config_dict.pop("sae_expansion", None)
 
     # JSON values become defaults; CLI args in remaining_argv override them.
     parser.set_defaults(**config_dict)
