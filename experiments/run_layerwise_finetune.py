@@ -685,7 +685,7 @@ def main():
     jump_relu_threshold = sae_hyperparams["jump_relu_threshold"]
     sae_top_k = sae_hyperparams["top_k"]
     activation_norm = sae_hyperparams["dataset_average_activation_norm"]["in"]
-    sae_norm_scale = (hidden_size ** 0.5) / activation_norm
+    sae_norm_scale = 1.0
     print(f"SAE hyperparams from {sae_hyperparams_path}:")
     print(f"  jump_relu_threshold: {jump_relu_threshold}")
     print(f"  top_k: {sae_top_k}")
