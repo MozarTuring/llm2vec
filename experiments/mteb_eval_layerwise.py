@@ -430,6 +430,7 @@ if __name__ == "__main__":
         cfg = json.load(f)
     config_keys = [
         "model_name_or_path", "peft_model_name_or_path", "lora_layers",
+        "sae_expansion",
         "hard_negatives_file", "num_hard_negatives", "temperature",
         "lambda_q", "lambda_d", "max_seq_length",
     ]
@@ -451,9 +452,10 @@ if __name__ == "__main__":
     # Infer sae_weights_path from lora_layers if not provided
     if args.sae_weights_path is None and args.lora_layers is not None:
         from huggingface_hub import hf_hub_download
+        sae_expansion = getattr(args, "sae_expansion", None) or 8
         args.sae_weights_path = hf_hub_download(
-            "OpenMOSS-Team/Llama3_1-8B-Base-LXR-8x",
-            f"Llama3_1-8B-Base-L{args.lora_layers}R-8x/checkpoints/final.safetensors",
+            f"OpenMOSS-Team/Llama3_1-8B-Base-LXR-{sae_expansion}x",
+            f"Llama3_1-8B-Base-L{args.lora_layers}R-{sae_expansion}x/checkpoints/final.safetensors",
             local_files_only=True,
         )
         print(f"Inferred sae_weights_path: {args.sae_weights_path}")

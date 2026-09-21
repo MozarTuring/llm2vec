@@ -526,9 +526,10 @@ def main():
                 print(f"Resolved {key}: {val} -> {resolved}")
                 config_dict[key] = resolved
     from huggingface_hub import hf_hub_download
+    sae_expansion = config_dict.get("sae_expansion", 8)
     config_dict["sae_weights_path"] = hf_hub_download(
-        "OpenMOSS-Team/Llama3_1-8B-Base-LXR-8x",
-        f"Llama3_1-8B-Base-L{lora_layers}R-8x/checkpoints/final.safetensors",
+        f"OpenMOSS-Team/Llama3_1-8B-Base-LXR-{sae_expansion}x",
+        f"Llama3_1-8B-Base-L{lora_layers}R-{sae_expansion}x/checkpoints/final.safetensors",
         local_files_only=True,
     )
     print(
@@ -666,9 +667,9 @@ def main():
     # ── Build full model: backbone → SAE → task ───────────────
     hidden_size = config.hidden_size
     with safe_open(model_args.sae_weights_path, framework="pt") as f:
-        encoder_weight = f.get_tensor("encoder.weight")  # Shape: [32768, 4096]
-        encoder_bias = f.get_tensor("encoder.bias")  # Shape: [32768]
-    sae = nn.Linear(4096, 32768)
+        encoder_weight = f.get_tensor("encoder.weight")
+        encoder_bias = f.get_tensor("encoder.bias")
+    sae = nn.Linear(encoder_weight.shape[1], encoder_weight.shape[0])
     with torch.no_grad():
         sae.weight.copy_(encoder_weight)
         sae.bias.copy_(encoder_bias)
