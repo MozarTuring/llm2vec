@@ -2,7 +2,7 @@ PKQ_PYTHON="3.10"
 # PKQ_SERVER_NAME=berzeliusampere
 PKQ_SERVER_NAME=arrhenius
 # PKQ_SERVER_NAME=greatrawr
-PKQ_GPU_NUM=4
+PKQ_GPU_NUM=2
 PKQ_NODES_NUM=1
 PKQ_RUN_TIME="1-00:00:00"
 PKQ_SLURM_FILE=slurm.sh
@@ -15,7 +15,7 @@ CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 
 CUDA_VISIBLE_DEVICES=1
 
-# PKQ_RUN_COMMAND="python experiments/run_mntp.py train_configs/mntp/MetaLlama3.1-msmarco.json"
+PKQ_RUN_COMMAND="python experiments/run_mntp.py train_configs/mntp/MetaLlama3.1-msmarco.json"
 
 
 
@@ -25,9 +25,9 @@ CUDA_VISIBLE_DEVICES=1
 
 # PKQ_RUN_COMMAND="python experiments/reranker.py rerank ${PKQ_DATA_DIR}/msmarco_hard_negatives_v2_parts --queries-per-batch 2 --output ${PKQ_DATA_DIR}/reranker_parts"
 
-PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/run_layerwise_finetune.py \
-    --config train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json \
-    --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
+# PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/run_layerwise_finetune.py \
+#     --config train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json \
+#     --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
 
 # BEIR 13 tasks (Table 5 in paper)
 # PKQ_TASK_NAMES="SciFact ArguAna ClimateFEVER DBPedia FEVER FiQA2018 HotpotQA NFCorpus NQ QuoraRetrieval SCIDOCS TRECCOVID Touche2020"
