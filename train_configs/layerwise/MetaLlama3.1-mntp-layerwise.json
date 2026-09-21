@@ -10,7 +10,7 @@
     "sae_expansion": 32,
     "per_device_train_batch_size": 32,
     "gradient_accumulation_steps": 1,
-    "learning_rate": 1e-5,
+    "learning_rate": 5e-5,
     "warmup_ratio": 0.01,
     "optim": "adamw_torch",
     "adam_beta1": 0.9,
@@ -25,6 +25,7 @@
     "temperature": 80,
     "lambda_q": 1e-4,
     "lambda_d": 1e-4,
+    "flops_warmup_steps": 500,
     "ddp_find_unused_parameters": true,
     "remove_unused_columns": false
 }

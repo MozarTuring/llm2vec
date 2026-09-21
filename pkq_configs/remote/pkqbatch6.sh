@@ -15,6 +15,10 @@ CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 
 CUDA_VISIBLE_DEVICES=1
 
+# PKQ_RUN_COMMAND="python experiments/run_mntp.py train_configs/mntp/MetaLlama3.1-msmarco.json"
+
+
+
 # PKQ_RUN_COMMAND="python experiments/hard_negatives.py --top-k 1000 --num-top 50 --num-random 50 --output ${PKQ_DATA_DIR}/msmarco_hard_negatives_v2.json --query-batch-size 8192"
 
 # PKQ_RUN_COMMAND="python experiments/reranker.py split ${PKQ_DATA_DIR}/msmarco_hard_negatives_v2.json --num-parts 100 --output-dir ${PKQ_DATA_DIR}/msmarco_hard_negatives_v2_parts/"
