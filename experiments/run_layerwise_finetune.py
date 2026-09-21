@@ -155,7 +155,10 @@ class LayerwiseModel(nn.Module):
             attention_mask=sentence_feature["attention_mask"],
         )
         hidden_states = outputs[0]
-        hidden_states = hidden_states * self.sae_norm_scale
+        if self.sae_norm_scale == "per_token":
+            hidden_states = SqrtDNorm()(hidden_states)
+        else:
+            hidden_states = hidden_states * self.sae_norm_scale
         sae_pre = self.sae(hidden_states)
         if not hasattr(self, "_log_count"):
             self._log_count = 0
@@ -685,7 +688,7 @@ def main():
     jump_relu_threshold = sae_hyperparams["jump_relu_threshold"]
     sae_top_k = sae_hyperparams["top_k"]
     activation_norm = sae_hyperparams["dataset_average_activation_norm"]["in"]
-    sae_norm_scale = 1.0
+    sae_norm_scale = "per_token"
     print(f"SAE hyperparams from {sae_hyperparams_path}:")
     print(f"  jump_relu_threshold: {jump_relu_threshold}")
     print(f"  top_k: {sae_top_k}")
