@@ -169,11 +169,10 @@ class LayerwiseModel(nn.Module):
                   f"std={sae_pre.std().item():.4f} frac_pos={frac_pos:.4f} "
                   f"max={sae_pre.max().item():.4f} min={sae_pre.min().item():.4f}")
         self._log_count += 1
-        mask = (sae_pre > self.jump_relu_threshold).float()
-        activated = sae_pre * mask
-        topk_vals, topk_idx = activated.topk(self.sae_top_k, dim=-1)
-        topk_mask = torch.zeros_like(activated).scatter_(-1, topk_idx, 1.0)
-        sae_out = torch.log(1 + activated * topk_mask)
+        topk_vals, topk_idx = sae_pre.topk(self.sae_top_k, dim=-1)
+        topk_vals = topk_vals * (topk_vals > self.jump_relu_threshold).float()
+        sae_out = torch.zeros_like(sae_pre)
+        sae_out.scatter_(-1, topk_idx, torch.log(1 + topk_vals))
         sae_out = sae_out * sentence_feature["attention_mask"].unsqueeze(-1)
         pooled, _ = sae_out.max(dim=1)
         return pooled, sae_out
