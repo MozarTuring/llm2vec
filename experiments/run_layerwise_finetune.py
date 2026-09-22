@@ -172,7 +172,7 @@ class LayerwiseModel(nn.Module):
         topk_vals, topk_idx = sae_pre.topk(self.sae_top_k, dim=-1)
         topk_vals = topk_vals * (topk_vals > self.jump_relu_threshold).float()
         sae_out = torch.zeros_like(sae_pre)
-        sae_out.scatter_(-1, topk_idx, torch.log(1 + topk_vals))
+        sae_out.scatter_(-1, topk_idx, torch.log(1 + topk_vals).to(sae_pre.dtype))
         sae_out = sae_out * sentence_feature["attention_mask"].unsqueeze(-1)
         pooled, _ = sae_out.max(dim=1)
         return pooled, sae_out
