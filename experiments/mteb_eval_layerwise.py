@@ -42,17 +42,19 @@ class SqrtDNorm(nn.Module):
 class EncodeModule(nn.Module):
     """Wraps backbone + SAE + pooling for DataParallel compatibility."""
 
-    def __init__(self, backbone, sae, sae_norm_scale):
+    def __init__(self, backbone, sae, sae_norm_scale, jump_relu_threshold=0.0):
         super().__init__()
         self.backbone = backbone
         self.sae = sae
         self.sae_norm_scale = sae_norm_scale
+        self.jump_relu_threshold = jump_relu_threshold
 
     def forward(self, input_ids, attention_mask):
         outputs = self.backbone(input_ids=input_ids, attention_mask=attention_mask)
         hidden_states = outputs[0] * self.sae_norm_scale
-        sae_out = self.sae(hidden_states)
-        sae_out = torch.log(1 + torch.relu(sae_out))
+        sae_pre = self.sae(hidden_states)
+        mask = (sae_pre > self.jump_relu_threshold).float()
+        sae_out = torch.log(1 + sae_pre * mask)
         sae_out = sae_out * attention_mask.unsqueeze(-1)
         pooled, _ = sae_out.max(dim=1)
         return pooled
@@ -118,7 +120,7 @@ class LayerwiseEncoder:
         self.sae_top_k = sae_hyperparams["top_k"]
         activation_norm = sae_hyperparams["dataset_average_activation_norm"]["in"]
         d_model = encoder_weight.shape[1]
-        sae_norm_scale = (d_model ** 0.5) / activation_norm
+        sae_norm_scale = 1.0
         print(f"SAE hyperparams from {sae_hyperparams_path}:")
         print(f"  jump_relu_threshold: {self.jump_relu_threshold}")
         print(f"  top_k: {self.sae_top_k}")
@@ -128,7 +130,7 @@ class LayerwiseEncoder:
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.num_gpus = torch.cuda.device_count() if torch.cuda.is_available() else 1
-        encode_module = EncodeModule(backbone, sae, sae_norm_scale)
+        encode_module = EncodeModule(backbone, sae, sae_norm_scale, self.jump_relu_threshold)
         encode_module.to(self.device)
         encode_module.eval()
         if self.num_gpus > 1:

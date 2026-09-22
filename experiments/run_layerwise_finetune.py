@@ -136,7 +136,6 @@ class LayerwiseModel(nn.Module):
     def __init__(
         self, config, backbone, sae, task_head, temperature, lambda_q, lambda_d,
         jump_relu_threshold=0.9609375, sae_top_k=50, sae_norm_scale=1.0,
-        flops_warmup_steps=0,
     ):
         super().__init__()
         self.config = config
@@ -149,7 +148,6 @@ class LayerwiseModel(nn.Module):
         self.jump_relu_threshold = jump_relu_threshold
         self.sae_top_k = sae_top_k
         self.sae_norm_scale = sae_norm_scale
-        self.flops_warmup_steps = flops_warmup_steps
         self.global_step = 0
 
     def encode(self, sentence_feature: Dict[str, torch.Tensor]):
@@ -166,12 +164,13 @@ class LayerwiseModel(nn.Module):
         if not hasattr(self, "_log_count"):
             self._log_count = 0
         if self._log_count < 20 or self._log_count % 200 == 0:
-            frac_pos = (sae_pre > 0).float().mean().item()
+            frac_pos = (sae_pre > self.jump_relu_threshold).float().mean().item()
             print(f"[diag step={self._log_count}] sae_pre: mean={sae_pre.mean().item():.4f} "
                   f"std={sae_pre.std().item():.4f} frac_pos={frac_pos:.4f} "
                   f"max={sae_pre.max().item():.4f} min={sae_pre.min().item():.4f}")
         self._log_count += 1
-        sae_out = torch.log(1 + torch.relu(sae_pre))
+        mask = (sae_pre > self.jump_relu_threshold).float()
+        sae_out = torch.log(1 + sae_pre * mask)
         sae_out = sae_out * sentence_feature["attention_mask"].unsqueeze(-1)
         pooled, _ = sae_out.max(dim=1)
         return pooled, sae_out
@@ -204,19 +203,12 @@ class LayerwiseModel(nn.Module):
         query_flops = self.flops_loss(pooled[0])
         doc_flops = self.flops_loss(torch.cat(pooled[1:], dim=0))
 
-        if self.flops_warmup_steps > 0 and self.global_step < self.flops_warmup_steps:
-            warmup_scale = self.global_step / self.flops_warmup_steps
-        else:
-            warmup_scale = 1.0
-        lq = self.lambda_q * warmup_scale
-        ld = self.lambda_d * warmup_scale
-
         if self.global_step < 20 or self.global_step % 200 == 0:
             print(f"[loss step={self.global_step}] kl={kl_loss.item():.4f} "
                   f"flops_q={query_flops.item():.1f} flops_d={doc_flops.item():.1f} "
-                  f"warmup={warmup_scale:.4f} lq={lq:.6f} ld={ld:.6f}")
+                  f"lq={self.lambda_q:.6f} ld={self.lambda_d:.6f}")
 
-        loss = kl_loss + lq * query_flops + ld * doc_flops
+        loss = kl_loss + self.lambda_q * query_flops + self.lambda_d * doc_flops
         self.global_step += 1
         return (loss,)
 
@@ -572,7 +564,7 @@ def main():
     temperature = config_dict.pop("temperature")
     lambda_q = config_dict.pop("lambda_q")
     lambda_d = config_dict.pop("lambda_d")
-    flops_warmup_steps = config_dict.pop("flops_warmup_steps", 0)
+    config_dict.pop("flops_warmup_steps", None)
     config_dict.pop("sae_expansion", None)
 
     # JSON values become defaults; CLI args in remaining_argv override them.
@@ -726,7 +718,6 @@ def main():
         jump_relu_threshold=jump_relu_threshold,
         sae_top_k=sae_top_k,
         sae_norm_scale=sae_norm_scale,
-        flops_warmup_steps=flops_warmup_steps,
     )
 
     print(f"\nLayerwiseModel ready:")
