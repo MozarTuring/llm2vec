@@ -170,7 +170,10 @@ class LayerwiseModel(nn.Module):
                   f"max={sae_pre.max().item():.4f} min={sae_pre.min().item():.4f}")
         self._log_count += 1
         mask = (sae_pre > self.jump_relu_threshold).float()
-        sae_out = torch.log(1 + sae_pre * mask)
+        activated = sae_pre * mask
+        topk_vals, topk_idx = activated.topk(self.sae_top_k, dim=-1)
+        topk_mask = torch.zeros_like(activated).scatter_(-1, topk_idx, 1.0)
+        sae_out = torch.log(1 + activated * topk_mask)
         sae_out = sae_out * sentence_feature["attention_mask"].unsqueeze(-1)
         pooled, _ = sae_out.max(dim=1)
         return pooled, sae_out

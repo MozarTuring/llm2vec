@@ -42,19 +42,23 @@ class SqrtDNorm(nn.Module):
 class EncodeModule(nn.Module):
     """Wraps backbone + SAE + pooling for DataParallel compatibility."""
 
-    def __init__(self, backbone, sae, sae_norm_scale, jump_relu_threshold=0.0):
+    def __init__(self, backbone, sae, sae_norm_scale, jump_relu_threshold=0.0, sae_top_k=50):
         super().__init__()
         self.backbone = backbone
         self.sae = sae
         self.sae_norm_scale = sae_norm_scale
         self.jump_relu_threshold = jump_relu_threshold
+        self.sae_top_k = sae_top_k
 
     def forward(self, input_ids, attention_mask):
         outputs = self.backbone(input_ids=input_ids, attention_mask=attention_mask)
         hidden_states = outputs[0] * self.sae_norm_scale
         sae_pre = self.sae(hidden_states)
         mask = (sae_pre > self.jump_relu_threshold).float()
-        sae_out = torch.log(1 + sae_pre * mask)
+        activated = sae_pre * mask
+        topk_vals, topk_idx = activated.topk(self.sae_top_k, dim=-1)
+        topk_mask = torch.zeros_like(activated).scatter_(-1, topk_idx, 1.0)
+        sae_out = torch.log(1 + activated * topk_mask)
         sae_out = sae_out * attention_mask.unsqueeze(-1)
         pooled, _ = sae_out.max(dim=1)
         return pooled
@@ -130,7 +134,7 @@ class LayerwiseEncoder:
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.num_gpus = torch.cuda.device_count() if torch.cuda.is_available() else 1
-        encode_module = EncodeModule(backbone, sae, sae_norm_scale, self.jump_relu_threshold)
+        encode_module = EncodeModule(backbone, sae, sae_norm_scale, self.jump_relu_threshold, self.sae_top_k)
         encode_module.to(self.device)
         encode_module.eval()
         if self.num_gpus > 1:
