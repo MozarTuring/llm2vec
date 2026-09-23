@@ -54,10 +54,7 @@ class EncodeModule(nn.Module):
         outputs = self.backbone(input_ids=input_ids, attention_mask=attention_mask)
         hidden_states = outputs[0] * self.sae_norm_scale
         sae_pre = self.sae(hidden_states)
-        topk_vals, topk_idx = sae_pre.topk(self.sae_top_k, dim=-1)
-        topk_vals = topk_vals * (topk_vals > self.jump_relu_threshold).float()
-        sae_out = torch.zeros_like(sae_pre)
-        sae_out.scatter_(-1, topk_idx, torch.log(1 + topk_vals).to(sae_pre.dtype))
+        sae_out = torch.log(1 + torch.relu(sae_pre))
         sae_out = sae_out * attention_mask.unsqueeze(-1)
         pooled, _ = sae_out.max(dim=1)
         return pooled
@@ -123,7 +120,7 @@ class LayerwiseEncoder:
         self.sae_top_k = sae_hyperparams["top_k"]
         activation_norm = sae_hyperparams["dataset_average_activation_norm"]["in"]
         d_model = encoder_weight.shape[1]
-        sae_norm_scale = 1.0
+        sae_norm_scale = (d_model ** 0.5) / activation_norm
         print(f"SAE hyperparams from {sae_hyperparams_path}:")
         print(f"  jump_relu_threshold: {self.jump_relu_threshold}")
         print(f"  top_k: {self.sae_top_k}")

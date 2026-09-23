@@ -165,15 +165,12 @@ class LayerwiseModel(nn.Module):
         if not hasattr(self, "_log_count"):
             self._log_count = 0
         if self._log_count < 20 or self._log_count % 200 == 0:
-            frac_pos = (sae_pre > self.jump_relu_threshold).float().mean().item()
+            frac_pos = (sae_pre > 0).float().mean().item()
             print(f"[diag step={self._log_count}] sae_pre: mean={sae_pre.mean().item():.4f} "
                   f"std={sae_pre.std().item():.4f} frac_pos={frac_pos:.4f} "
                   f"max={sae_pre.max().item():.4f} min={sae_pre.min().item():.4f}")
         self._log_count += 1
-        topk_vals, topk_idx = sae_pre.topk(self.sae_top_k, dim=-1)
-        topk_vals = topk_vals * (topk_vals > self.jump_relu_threshold).float()
-        sae_out = torch.zeros_like(sae_pre)
-        sae_out.scatter_(-1, topk_idx, torch.log(1 + topk_vals).to(sae_pre.dtype))
+        sae_out = torch.log(1 + torch.relu(sae_pre))
         sae_out = sae_out * sentence_feature["attention_mask"].unsqueeze(-1)
         pooled, _ = sae_out.max(dim=1)
         return pooled, sae_out
@@ -702,7 +699,9 @@ def main():
     jump_relu_threshold = sae_hyperparams["jump_relu_threshold"]
     sae_top_k = sae_hyperparams["top_k"]
     activation_norm = sae_hyperparams["dataset_average_activation_norm"]["in"]
-    sae_norm_scale = 1.0
+    # Llama Scope SAEs are trained on inputs rescaled to norm sqrt(d_model)
+    # (norm_activation="dataset-wise"); the encoder expects that scale.
+    sae_norm_scale = (hidden_size ** 0.5) / activation_norm
     print(f"SAE hyperparams from {sae_hyperparams_path}:")
     print(f"  jump_relu_threshold: {jump_relu_threshold}")
     print(f"  top_k: {sae_top_k}")
