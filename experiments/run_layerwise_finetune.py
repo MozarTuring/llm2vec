@@ -25,6 +25,7 @@ import argparse
 import json
 import logging
 import os
+import random
 import sys
 import warnings
 from dataclasses import dataclass, field
@@ -287,10 +288,12 @@ class MSMARCOHardNegDataset(torch.utils.data.Dataset):
         query = item["query"]
         pos = item["positives"][0]
         positive = pos["text"]
-        neg_items = item["hard_negatives"][:num_hard_negatives]
-        negs = [n["text"] for n in neg_items]
-        if len(negs) < num_hard_negatives:
+        if len(item["hard_negatives"]) < num_hard_negatives:
             return 1
+        # Reranked files are sorted by teacher score; a prefix would be the
+        # likeliest false negatives, so sample uniformly from the pool.
+        neg_items = random.sample(item["hard_negatives"], num_hard_negatives)
+        negs = [n["text"] for n in neg_items]
         reranker_scores = [pos["reranker_score"]] + [
             n["reranker_score"] for n in neg_items
         ]
