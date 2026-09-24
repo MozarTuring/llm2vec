@@ -6,8 +6,8 @@
     "num_hard_negatives": 8,
     "max_seq_length": 128,
     "lora_r": 64,
-    "lora_layers": 0,
-    "sae_expansion": 8,
+    "lora_layers": 26,
+    "sae_expansion": 32,
     "per_device_train_batch_size": 32,
     "gradient_accumulation_steps": 1,
     "learning_rate": 5e-5,
@@ -25,7 +25,6 @@
     "temperature": 80,
     "lambda_q": 1e-4,
     "lambda_d": 1e-4,
-    "flops_warmup_steps": 500,
     "ddp_find_unused_parameters": true,
     "remove_unused_columns": false
 }
