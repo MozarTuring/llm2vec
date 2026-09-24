@@ -136,10 +136,11 @@ class LayerwiseModel(nn.Module):
 
     def __init__(
         self, config, backbone, sae, task_head, temperature, lambda_q, lambda_d,
-        jump_relu_threshold=0.9609375, sae_top_k=50, sae_norm_scale=1.0,
+        bos_token_id, jump_relu_threshold=0.9609375, sae_top_k=50, sae_norm_scale=1.0,
     ):
         super().__init__()
         self.config = config
+        self.bos_token_id = bos_token_id
         self.backbone = backbone
         self.sae = sae
         self.task_head = task_head
@@ -171,7 +172,12 @@ class LayerwiseModel(nn.Module):
                   f"max={sae_pre.max().item():.4f} min={sae_pre.min().item():.4f}")
         self._log_count += 1
         sae_out = torch.log(1 + torch.relu(sae_pre))
-        sae_out = sae_out * sentence_feature["attention_mask"].unsqueeze(-1)
+        # BOS stays in attention but is excluded from pooling: Llama Scope
+        # SAEs were trained with BOS activations excluded.
+        pool_mask = sentence_feature["attention_mask"] * (
+            sentence_feature["input_ids"] != self.bos_token_id
+        )
+        sae_out = sae_out * pool_mask.unsqueeze(-1)
         pooled, _ = sae_out.max(dim=1)
         return pooled, sae_out
 
@@ -719,6 +725,7 @@ def main():
         temperature=temperature,
         lambda_q=lambda_q,
         lambda_d=lambda_d,
+        bos_token_id=tokenizer.bos_token_id,
         jump_relu_threshold=jump_relu_threshold,
         sae_top_k=sae_top_k,
         sae_norm_scale=sae_norm_scale,
