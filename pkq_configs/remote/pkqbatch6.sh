@@ -9,7 +9,7 @@ PKQ_SLURM_FILE=slurm.sh
 PKQ_build_flashattn=
 PKQ_NOTEBOOK=
 PKQ_MODULES="GPU/Miniforge/26.3.2-2-eb"
-PKQ_INTERACTIVE=1
+PKQ_INTERACTIVE=
 
 MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
 CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
@@ -35,17 +35,17 @@ CUDA_VISIBLE_DEVICES=1
 
 # MTEB(Eng, v2) retrieval tasks (Table 6 in paper, used in Figure 2)
 # PKQ_TASK_NAMES="ArguAna CQADupstackGamingRetrieval CQADupstackUnixRetrieval ClimateFEVERHardNegatives FEVERHardNegatives FiQA2018 HotpotQAHardNegatives SCIDOCS TRECCOVID Touche2020Retrieval.v3"
-#
-# PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py \
-#   --trained_checkpoint_path ${PKQ_DATA_DIR}/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L26/checkpoint-3930 \
-#   --query_top_k 40 \
-#   --doc_top_k 400 \
-#   --output_dir results \
-#   --max_length 1024 \
-#   --task_name ${PKQ_TASK_NAMES}"
+
+PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py \
+  --trained_checkpoint_path ${PKQ_DATA_DIR}/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L26/checkpoint-3930 \
+  --query_top_k 0 \
+  --doc_top_k 0 \
+  --output_dir results \
+  --max_length 1024 \
+  --task_name ${PKQ_TASK_NAMES}"
 
 
-PKQ_RUN_COMMAND="python experiments/mteb_eval_splade.py --output_dir results_splade_v3_nopool"
+# PKQ_RUN_COMMAND="python experiments/mteb_eval_splade.py --output_dir results_splade_v3_nopool"
 
 # PKQ_RUN_COMMAND="python experiments/check_postprocessing.py $PKQ_DATA_DIR/Llama3_1-8B-Base-L0R-8x"
 

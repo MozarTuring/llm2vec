@@ -415,8 +415,8 @@ if __name__ == "__main__":
     parser.add_argument("--task_name", type=str, nargs="*")
     parser.add_argument("--task_type", type=str, choices=["retrieval", "all"])
     parser.add_argument("--output_dir", type=str)
-    parser.add_argument("--query_top_k", type=int, default=40)
-    parser.add_argument("--doc_top_k", type=int, default=400)
+    parser.add_argument("--query_top_k", type=int, default=40, help="0 disables pruning.")
+    parser.add_argument("--doc_top_k", type=int, default=400, help="0 disables pruning.")
     parser.add_argument("--max_length", type=int, default=1024)
     parser.add_argument("--hard_negatives_file", type=str)
     parser.add_argument("--num_hard_negatives", type=int)
@@ -425,6 +425,8 @@ if __name__ == "__main__":
     parser.add_argument("--lambda_d", type=float)
     parser.add_argument("--max_seq_length", type=int)
     args = parser.parse_args()
+    args.query_top_k = args.query_top_k or None
+    args.doc_top_k = args.doc_top_k or None
 
     # Auto-discover train config JSON from parent of checkpoint dir
     parent_dir = os.path.dirname(os.path.normpath(args.trained_checkpoint_path))
