@@ -7,8 +7,8 @@ export PKQ_SLURM_FILE=slurm.sh
 export PKQ_build_flashattn=
 export PKQ_NOTEBOOK=
 export PKQ_MODULES="GPU/Miniforge/26.3.2-2-eb"
-export PKQ_INTERACTIVE=
+export PKQ_INTERACTIVE=1
 export MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
 export CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 export CUDA_VISIBLE_DEVICES=1
-export PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/run_layerwise_finetune.py     --config train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json     --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
+export PKQ_RUN_COMMAND="python experiments/mteb_eval_splade.py --output_dir results_splade_v3_nopool"

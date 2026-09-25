@@ -29,4 +29,5 @@
 #   --include "Llama3_1-8B-Base-L0R-8x/*"
 # hf download "naver/trecdl22-crossencoder-debertav3"
 
-hf download OpenMOSS-Team/Llama3_1-8B-Base-LXR-32x --include "Llama3_1-8B-Base-L26R-32x/*"
+# hf download OpenMOSS-Team/Llama3_1-8B-Base-LXR-32x --include "Llama3_1-8B-Base-L26R-32x/*"
+hf download naver/splade-v3

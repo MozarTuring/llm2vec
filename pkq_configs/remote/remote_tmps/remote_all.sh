@@ -20,11 +20,11 @@ export MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
 export CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 export CUDA_VISIBLE_DEVICES=1
 export PKQ_TASK_NAMES="ArguAna CQADupstackGamingRetrieval CQADupstackUnixRetrieval ClimateFEVERHardNegatives FEVERHardNegatives FiQA2018 HotpotQAHardNegatives SCIDOCS TRECCOVID Touche2020Retrieval.v3"
-export PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py   --trained_checkpoint_path ${PKQ_DATA_DIR}/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L0/checkpoint-3930   --query_top_k 40   --doc_top_k 400   --output_dir results   --max_length 1024   --task_name ${PKQ_TASK_NAMES}"
+export PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py   --trained_checkpoint_path ${PKQ_DATA_DIR}/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L26/checkpoint-3930   --query_top_k 40   --doc_top_k 400   --output_dir results   --max_length 1024   --task_name ${PKQ_TASK_NAMES}"
 export PKQ_ARCH="aarch64"
 if [ -z  ]; then
     export PKQ_CONDAENV=/nobackup/proj/disk/naiss2026-3-658/personal/jinma63/pkqcondaenv/llm2vec_pikaq
     export PKQ_WHEELS=/nobackup/proj/disk/naiss2026-3-658/personal/jinma63/pkqwheels/llm2vec_pikaq
 fi
 echo "condaenv path "
-sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkqlogs/20260924_095912/job-%j.out --error=pkqlogs/20260924_095912/job-%j.out  --gres=gpu:4 --cpus-per-task=32 --mem=320G  -A naiss2026-3-658-gpu  --partition=gpu pkq_configs/remote/remote_tmps/slurm.sh
+sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkqlogs/20260925_070427/job-%j.out --error=pkqlogs/20260925_070427/job-%j.out  --gres=gpu:4 --cpus-per-task=32 --mem=320G  -A naiss2026-3-658-gpu  --partition=gpu pkq_configs/remote/remote_tmps/slurm.sh
