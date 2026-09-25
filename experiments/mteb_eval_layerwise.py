@@ -162,6 +162,24 @@ class LayerwiseEncoder:
         bytes_per_elem = (self.d_sae * 3) * 4 + self.d_sae * 1 + 4096 * 4
         return batch_size * seq_len * bytes_per_elem / 1024**3
 
+    def _plan_batches(self, token_lengths, usable_gb):
+        """Greedily split texts into (start, end, max_len) batches that fit in usable_gb."""
+        batches = []
+        start = 0
+        while start < len(token_lengths):
+            batch_max_len = 0
+            batch_end = start
+            for i in range(start, len(token_lengths)):
+                new_max_len = max(batch_max_len, token_lengths[i])
+                new_count = i - start + 1
+                if self._estimate_peak_gb(new_count, new_max_len) > usable_gb and new_count > 1:
+                    break
+                batch_max_len = new_max_len
+                batch_end = i + 1
+            batches.append((start, batch_end, batch_max_len))
+            start = batch_end
+        return batches
+
     @torch.no_grad()
     def encode_texts(self, texts, top_k=None):
         all_chunks = []
@@ -171,30 +189,21 @@ class LayerwiseEncoder:
         token_lengths = [len(ids) for ids in encoded["input_ids"]]
         del encoded
 
-        start = 0
-        while start < len(texts):
-            torch.cuda.empty_cache()
-            if torch.cuda.is_available():
-                free_gb = torch.cuda.mem_get_info()[0] / 1024**3
-            else:
-                free_gb = 8.0
-            usable_gb = free_gb - 15.0
+        # Measure free memory once and plan every batch up front.
+        torch.cuda.empty_cache()
+        if torch.cuda.is_available():
+            free_gb = torch.cuda.mem_get_info()[0] / 1024**3
+        else:
+            free_gb = 8.0
+        usable_gb = free_gb - 15.0
+        batches = self._plan_batches(token_lengths, usable_gb)
+        sizes = [end - start for start, end, _ in batches]
+        print(f"  planned {len(batches)} batches for {len(texts)} texts "
+              f"(bs min={min(sizes)} max={max(sizes)}), "
+              f"free={free_gb:.1f}GB, usable={usable_gb:.1f}GB")
 
-            # Greedily add samples until the next one would exceed memory
-            batch_max_len = 0
-            batch_end = start
-            for i in range(start, len(texts)):
-                new_max_len = max(batch_max_len, token_lengths[i])
-                new_count = i - start + 1
-                if self._estimate_peak_gb(new_count, new_max_len) > usable_gb and new_count > 1:
-                    break
-                batch_max_len = new_max_len
-                batch_end = i + 1
-
+        for start, batch_end, batch_max_len in batches:
             batch_size = batch_end - start
-            print(f"  batch {start}-{batch_end}/{len(texts)}, bs={batch_size}, "
-                  f"seq_len={batch_max_len}, free={free_gb:.1f}GB, usable={usable_gb:.1f}GB")
-
             inputs = self.tokenizer(
                 texts[start:batch_end], padding=True, truncation=True,
                 max_length=self.max_length, return_tensors="pt",
@@ -212,7 +221,6 @@ class LayerwiseEncoder:
 
             all_chunks.append(pooled.cpu().float().numpy())
             del inputs, pooled
-            start = batch_end
 
         return np.concatenate(all_chunks, axis=0)
 

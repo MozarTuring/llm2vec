@@ -36,14 +36,15 @@ CUDA_VISIBLE_DEVICES=1
 # MTEB(Eng, v2) retrieval tasks (Table 6 in paper, used in Figure 2)
 # PKQ_TASK_NAMES="ArguAna CQADupstackGamingRetrieval CQADupstackUnixRetrieval ClimateFEVERHardNegatives FEVERHardNegatives FiQA2018 HotpotQAHardNegatives SCIDOCS TRECCOVID Touche2020Retrieval.v3"
 
-PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py \
-  --trained_checkpoint_path ${PKQ_DATA_DIR}/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L26/checkpoint-3930 \
-  --query_top_k 0 \
-  --doc_top_k 0 \
-  --output_dir results \
-  --max_length 1024 \
-  --task_name ${PKQ_TASK_NAMES}"
+# PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py \
+#   --trained_checkpoint_path ${PKQ_DATA_DIR}/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L26/checkpoint-3930 \
+#   --query_top_k 0 \
+#   --doc_top_k 0 \
+#   --output_dir results \
+#   --max_length 1024 \
+#   --task_name ${PKQ_TASK_NAMES}"
 
+PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py --trained_checkpoint_path ${PKQ_DATA_DIR}/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L26/checkpoint-3930 --query_top_k 0 --doc_top_k 0 --output_dir results_nopool --max_length 1024 --task_name FEVERHardNegatives HotpotQAHardNegatives Touche2020Retrieval.v3 ClimateFEVERHardNegatives"
 
 # PKQ_RUN_COMMAND="python experiments/mteb_eval_splade.py --output_dir results_splade_v3_nopool"
 
