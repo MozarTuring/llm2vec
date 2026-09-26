@@ -23,8 +23,8 @@
     "overwrite_output_dir": true,
     "do_train": true,
     "temperature": 80,
-    "lambda_q": 1e-4,
-    "lambda_d": 1e-4,
+    "lambda_q": 1e-3,
+    "lambda_d": 1e-3,
     "ddp_find_unused_parameters": true,
     "remove_unused_columns": false
 }
