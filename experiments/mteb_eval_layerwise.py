@@ -11,6 +11,7 @@ from mteb.models.model_meta import ModelMeta
 import numpy as np
 import torch
 from torch import nn
+from torch.nn.parallel import gather, parallel_apply, replicate, scatter
 
 from transformers import AutoConfig, AutoTokenizer
 from peft import PeftModel
@@ -40,7 +41,7 @@ class SqrtDNorm(nn.Module):
 
 
 class EncodeModule(nn.Module):
-    """Wraps backbone + SAE + pooling for DataParallel compatibility."""
+    """Backbone + SAE + pooling as one module, so it can be replicated per GPU."""
 
     def __init__(self, backbone, sae, sae_norm_scale, bos_token_id, jump_relu_threshold=0.0, sae_top_k=50):
         super().__init__()
@@ -139,31 +140,51 @@ class LayerwiseEncoder:
         )
         encode_module.to(self.device)
         encode_module.eval()
+        self.encode_module = encode_module
+        self.device_ids = list(range(self.num_gpus))
+        self.replicas = None
         if self.num_gpus > 1:
-            self.encode_module = nn.DataParallel(encode_module)
-            print(f"Using DataParallel with {self.num_gpus} GPUs")
-        else:
-            self.encode_module = encode_module
+            # Weights are fixed at eval time, so copy the model to each GPU once
+            # (nn.DataParallel re-replicates on every forward).
+            with torch.no_grad():
+                self.replicas = replicate(encode_module, self.device_ids, detach=True)
+            print(f"Replicated model once onto {self.num_gpus} GPUs")
         self.sae_norm_scale = sae_norm_scale
         self.max_length = max_length
         self.d_sae = sae.out_features
-        if torch.cuda.is_available():
-            free, total = torch.cuda.mem_get_info()
-            print(f"Model on GPU: {free/1024**3:.1f}GB free / {total/1024**3:.1f}GB total")
+        # One persistent module per GPU (the original module when there is one GPU).
+        self.gpu_modules = self.replicas if self.replicas is not None else [encode_module]
+        free, total = torch.cuda.mem_get_info()
+        print(f"Model on GPU: {free/1024**3:.1f}GB free / {total/1024**3:.1f}GB total")
+        self.bytes_per_token = self._calibrate_bytes_per_token()
 
-    def _estimate_peak_gb(self, batch_size, seq_len):
-        """Peak GPU memory per batch.
+    @torch.no_grad()
+    def _calibrate_bytes_per_token(self, batch_size=8):
+        """Measure peak activation memory per padded token with one dummy batch.
 
-        Main tensors alive simultaneously during SAE phase:
-          hidden_states (4096) + sae_out×3 (where keeps input + zeros + output) + bool mask
-        Use 50% of free memory as safety margin for allocator overhead / fragmentation.
+        Uses the longest allowed sequence length, so the (small) quadratic
+        attention cost is covered for every shorter batch too.
         """
-        # 3× d_sae float32 + 1× d_sae bool + 1× d_model float32
-        bytes_per_elem = (self.d_sae * 3) * 4 + self.d_sae * 1 + 4096 * 4
-        return batch_size * seq_len * bytes_per_elem / 1024**3
+        seq_len = self.max_length
+        device = torch.device("cuda", self.device_ids[0])
+        # Ordinary (non-special) token ids; content does not affect memory.
+        input_ids = torch.randint(0, self.tokenizer.bos_token_id, (batch_size, seq_len), device=device)
+        attention_mask = torch.ones_like(input_ids)
+        torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats(device)
+        base = torch.cuda.memory_allocated(device)
+        out = self.gpu_modules[0](input_ids, attention_mask)
+        del out
+        peak = torch.cuda.max_memory_allocated(device)
+        bytes_per_token = (peak - base) / (batch_size * seq_len)
+        print(f"Calibrated activation memory: {bytes_per_token / 1024**2:.3f} MB/token "
+              f"(batch {batch_size} x {seq_len} tokens, peak +{(peak - base) / 1024**3:.1f}GB)")
+        del input_ids, attention_mask
+        torch.cuda.empty_cache()
+        return bytes_per_token
 
-    def _plan_batches(self, token_lengths, usable_gb):
-        """Greedily split texts into (start, end, max_len) batches that fit in usable_gb."""
+    def _plan_batches(self, token_lengths, budget_bytes, bytes_per_token):
+        """Greedily split texts into (start, end, max_len) batches, each fitting one GPU."""
         batches = []
         start = 0
         while start < len(token_lengths):
@@ -172,7 +193,7 @@ class LayerwiseEncoder:
             for i in range(start, len(token_lengths)):
                 new_max_len = max(batch_max_len, token_lengths[i])
                 new_count = i - start + 1
-                if self._estimate_peak_gb(new_count, new_max_len) > usable_gb and new_count > 1:
+                if new_count * new_max_len * bytes_per_token > budget_bytes and new_count > 1:
                     break
                 batch_max_len = new_max_len
                 batch_end = i + 1
@@ -181,46 +202,80 @@ class LayerwiseEncoder:
         return batches
 
     @torch.no_grad()
-    def encode_texts(self, texts, top_k=None):
+    def forward_pooled(self, input_ids, attention_mask):
+        """Pooled SAE vectors for a batch, split across the persistent GPU replicas."""
+        if self.replicas is None:
+            return self.encode_module(input_ids, attention_mask)
+        inputs = scatter((input_ids, attention_mask), self.device_ids)
+        n = len(inputs)
+        outputs = parallel_apply(self.replicas[:n], inputs, devices=self.device_ids[:n])
+        return gather(outputs, self.device_ids[0])
+
+    def _pad_batch(self, id_lists, device):
+        """Left-pad pre-tokenized sequences into (input_ids, attention_mask) on device."""
+        max_len = max(len(ids) for ids in id_lists)
+        input_ids = torch.full((len(id_lists), max_len), self.tokenizer.pad_token_id, dtype=torch.long)
+        attention_mask = torch.zeros((len(id_lists), max_len), dtype=torch.long)
+        for i, ids in enumerate(id_lists):
+            input_ids[i, max_len - len(ids):] = torch.tensor(ids, dtype=torch.long)
+            attention_mask[i, max_len - len(ids):] = 1
+        return input_ids.to(device), attention_mask.to(device)
+
+    @torch.no_grad()
+    def encode_texts(self, texts, top_k=None, safety_factor=1.25, margin_gb=10.0):
         all_chunks = []
 
-        # Pre-compute token lengths (CPU only, no padding, fast)
-        encoded = self.tokenizer(texts, truncation=True, max_length=self.max_length)
-        token_lengths = [len(ids) for ids in encoded["input_ids"]]
-        del encoded
+        # Tokenize once; the ids are reused for every batch below.
+        all_ids = self.tokenizer(texts, truncation=True, max_length=self.max_length)["input_ids"]
+        token_lengths = [len(ids) for ids in all_ids]
 
-        # Measure free memory once and plan every batch up front.
+        # Plan every batch up front against the tightest GPU's free memory.
+        # Each planned batch runs whole on one GPU; consecutive batches go to
+        # GPUs 0..n-1 in parallel, so each GPU pads only to its own longest text.
         torch.cuda.empty_cache()
-        if torch.cuda.is_available():
-            free_gb = torch.cuda.mem_get_info()[0] / 1024**3
-        else:
-            free_gb = 8.0
-        usable_gb = free_gb - 15.0
-        batches = self._plan_batches(token_lengths, usable_gb)
+        free_gb = min(torch.cuda.mem_get_info(d)[0] for d in self.device_ids) / 1024**3
+        budget_gb = free_gb - margin_gb
+        bytes_per_token = self.bytes_per_token * safety_factor
+        batches = self._plan_batches(token_lengths, budget_gb * 1024**3, bytes_per_token)
         sizes = [end - start for start, end, _ in batches]
-        print(f"  planned {len(batches)} batches for {len(texts)} texts "
+        n_gpus = len(self.gpu_modules)
+        print(f"  planned {len(batches)} batches for {len(texts)} texts on {n_gpus} GPU(s) "
               f"(bs min={min(sizes)} max={max(sizes)}), "
-              f"free={free_gb:.1f}GB, usable={usable_gb:.1f}GB")
+              f"min free={free_gb:.1f}GB, per-GPU budget={budget_gb:.1f}GB")
 
-        for start, batch_end, batch_max_len in batches:
-            batch_size = batch_end - start
-            inputs = self.tokenizer(
-                texts[start:batch_end], padding=True, truncation=True,
-                max_length=self.max_length, return_tensors="pt",
-            ).to(self.device)
-
+        t0 = time.time()
+        done = 0
+        rounds = 0
+        for r in range(0, len(batches), n_gpus):
+            group = batches[r:r + n_gpus]
+            k = len(group)
+            inputs = [
+                self._pad_batch(all_ids[start:end], torch.device("cuda", self.device_ids[i]))
+                for i, (start, end, _) in enumerate(group)
+            ]
             try:
-                pooled = self.encode_module(inputs["input_ids"], inputs["attention_mask"])
+                outputs = parallel_apply(self.gpu_modules[:k], inputs, devices=self.device_ids[:k])
+                pooled = gather(outputs, self.device_ids[0])
                 if top_k is not None:
                     vals, idx = pooled.topk(top_k, dim=-1)
                     pooled = torch.zeros_like(pooled)
                     pooled.scatter_(-1, idx, vals)
             except torch.cuda.OutOfMemoryError:
-                print(f"CUDA OOM at {start}/{len(texts)}, bs={batch_size}, seq_len={batch_max_len}", file=sys.stderr)
+                desc = ", ".join(f"gpu{i}: bs={end - start} len={max_len}"
+                                 for i, (start, end, max_len) in enumerate(group))
+                print(f"CUDA OOM at text {group[0][0]}/{len(texts)} ({desc})", file=sys.stderr)
                 sys.exit(1)
 
             all_chunks.append(pooled.cpu().float().numpy())
-            del inputs, pooled
+            del inputs, outputs, pooled
+
+            prev, done = done, done + k
+            rounds += 1
+            if done // 100 > prev // 100 or done == len(batches):
+                elapsed = time.time() - t0
+                print(f"  batch {done}/{len(batches)}: {group[-1][1]}/{len(texts)} texts, "
+                      f"{elapsed:.0f}s elapsed, {elapsed / rounds:.2f}s per round "
+                      f"({n_gpus} batches in parallel)", flush=True)
 
         return np.concatenate(all_chunks, axis=0)
 
@@ -352,7 +407,7 @@ def verify_loss(encoder, hard_negatives_file, num_hard_negatives, temperature,
     with torch.no_grad():
         pooled_list = []
         for tg in tokenized_groups:
-            pooled = encoder.encode_module(tg["input_ids"], tg["attention_mask"])
+            pooled = encoder.forward_pooled(tg["input_ids"], tg["attention_mask"])
             pooled_list.append(pooled)
 
         query_enc = pooled_list[0]
