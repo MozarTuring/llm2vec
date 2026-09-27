@@ -34,7 +34,8 @@ CUDA_VISIBLE_DEVICES=1
 # PKQ_TASK_NAMES="SciFact ArguAna ClimateFEVER DBPedia FEVER FiQA2018 HotpotQA NFCorpus NQ QuoraRetrieval SCIDOCS TRECCOVID Touche2020"
 
 # MTEB(Eng, v2) retrieval tasks (Table 6 in paper, used in Figure 2)
-PKQ_TASK_NAMES="ArguAna CQADupstackGamingRetrieval CQADupstackUnixRetrieval ClimateFEVERHardNegatives FEVERHardNegatives FiQA2018 HotpotQAHardNegatives SCIDOCS TRECCOVID Touche2020Retrieval.v3"
+PKQ_TASK_NAMES="ArguAna" 
+# CQADupstackGamingRetrieval CQADupstackUnixRetrieval ClimateFEVERHardNegatives FEVERHardNegatives FiQA2018 HotpotQAHardNegatives SCIDOCS TRECCOVID Touche2020Retrieval.v3"
 
 PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py \
   --trained_checkpoint_path ${PKQ_DATA_DIR}/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L26/checkpoint-3930 \
