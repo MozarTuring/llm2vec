@@ -555,10 +555,8 @@ def main():
         f"Inferred sae_weights_path from lora_layers={lora_layers}: "
         f"{config_dict['sae_weights_path']}"
     )
-    inferred_output_dir = os.path.join(
-        data_dir,
-        f"output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L{lora_layers}",
-    )
+    # Generated artifacts go under the working directory, not PKQ_DATA_DIR.
+    inferred_output_dir = f"output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L{lora_layers}"
     config_dict["output_dir"] = inferred_output_dir
     print(
         f"Inferred output_dir from lora_layers={lora_layers}: "
