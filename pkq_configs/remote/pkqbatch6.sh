@@ -16,8 +16,7 @@ CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 
 CUDA_VISIBLE_DEVICES=1
 
-PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/run_mntp.py train_configs/mntp/MetaLlama3.1-msmarco.json"
-
+# PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/run_mntp.py train_configs/mntp/MetaLlama3.1-msmarco.json"
 
 
 # PKQ_RUN_COMMAND="python experiments/hard_negatives.py --top-k 1000 --num-top 50 --num-random 50 --output ${PKQ_DATA_DIR}/msmarco_hard_negatives_v2.json --query-batch-size 8192"
@@ -26,9 +25,9 @@ PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/run_mntp.p
 
 # PKQ_RUN_COMMAND="python experiments/reranker.py rerank ${PKQ_DATA_DIR}/msmarco_hard_negatives_v2_parts --queries-per-batch 2 --output ${PKQ_DATA_DIR}/reranker_parts"
 
-# PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/run_layerwise_finetune.py \
-#     --config train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json \
-#     --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
+PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/run_layerwise_finetune.py \
+    --config train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json \
+    --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
 
 # BEIR 13 tasks (Table 5 in paper)
 # PKQ_TASK_NAMES="SciFact ArguAna ClimateFEVER DBPedia FEVER FiQA2018 HotpotQA NFCorpus NQ QuoraRetrieval SCIDOCS TRECCOVID Touche2020"

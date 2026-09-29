@@ -19,6 +19,4 @@ export PKQ_INTERACTIVE=
 export MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
 export CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 export CUDA_VISIBLE_DEVICES=1
-export PKQ_ATTRIB_CKPT="${RUN_DIR_HOME}/project_remote_pkq/llm2vec_pikaq_backup/20260926_074205/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L26/checkpoint-3930"
-export PKQ_ATTRIB_TASKS="FEVERHardNegatives HotpotQAHardNegatives Touche2020Retrieval.v3 ClimateFEVERHardNegatives"
-export PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py   --trained_checkpoint_path ${PKQ_ATTRIB_CKPT}   --query_top_k 40   --doc_top_k 0   --output_dir results   --max_length 1024   --task_name ${PKQ_ATTRIB_TASKS}"
+export PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/run_mntp.py train_configs/mntp/MetaLlama3.1-msmarco.json"
