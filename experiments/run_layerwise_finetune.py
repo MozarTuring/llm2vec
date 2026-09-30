@@ -137,10 +137,12 @@ class LayerwiseModel(nn.Module):
     def __init__(
         self, config, backbone, sae, task_head, temperature, lambda_q, lambda_d,
         bos_token_id, jump_relu_threshold=0.9609375, sae_top_k=50, sae_norm_scale=1.0,
+        flops_chunk_size=0,
     ):
         super().__init__()
         self.config = config
         self.bos_token_id = bos_token_id
+        self.flops_chunk_size = flops_chunk_size
         self.backbone = backbone
         self.sae = sae
         self.task_head = task_head
@@ -185,6 +187,22 @@ class LayerwiseModel(nn.Module):
     def flops_loss(sae_out):
         return torch.sum(sae_out.mean(dim=0) ** 2)
 
+    def chunked_flops(self, query, docs):
+        """FLOPS over micro-batches of flops_chunk_size queries (plus their docs), averaged.
+
+        FLOPS is not linear in batch size, so this emulates computing it per
+        micro-batch under gradient accumulation. flops_chunk_size <= 0 uses the
+        whole per-device batch.
+        """
+        n = query.shape[0]
+        chunk = self.flops_chunk_size if 0 < self.flops_chunk_size < n else n
+        q_flops, d_flops = [], []
+        for start in range(0, n, chunk):
+            end = start + chunk
+            q_flops.append(self.flops_loss(query[start:end]))
+            d_flops.append(self.flops_loss(torch.cat([d[start:end] for d in docs], dim=0)))
+        return torch.stack(q_flops).mean(), torch.stack(d_flops).mean()
+
     def forward(
         self, features: List[Dict[str, torch.Tensor]], reranker_scores: torch.Tensor
     ):
@@ -206,8 +224,7 @@ class LayerwiseModel(nn.Module):
         target_probs = torch.softmax(reranker_scores.to(scores.device), dim=1)
         kl_loss = nn.functional.kl_div(log_pred, target_probs, reduction="batchmean")
 
-        query_flops = self.flops_loss(pooled[0])
-        doc_flops = self.flops_loss(torch.cat(pooled[1:], dim=0))
+        query_flops, doc_flops = self.chunked_flops(pooled[0], pooled[1:])
 
         if self.global_step < 20 or self.global_step % 200 == 0:
             print(f"[loss step={self.global_step}] kl={kl_loss.item():.4f} "
@@ -570,6 +587,7 @@ def main():
     temperature = config_dict.pop("temperature")
     lambda_q = config_dict.pop("lambda_q")
     lambda_d = config_dict.pop("lambda_d")
+    flops_chunk_size = config_dict.pop("flops_chunk_size", 0)
     config_dict.pop("flops_warmup_steps", None)
     config_dict.pop("sae_expansion", None)
 
@@ -727,9 +745,11 @@ def main():
         jump_relu_threshold=jump_relu_threshold,
         sae_top_k=sae_top_k,
         sae_norm_scale=sae_norm_scale,
+        flops_chunk_size=flops_chunk_size,
     )
 
     print(f"\nLayerwiseModel ready:")
+    print(f"  FLOPS chunk size: {flops_chunk_size or 'whole per-device batch'}")
     print(f"  Backbone: {num_active} layers (0-{custom_args.lora_layers})")
     print(f"  Hidden size: {hidden_size}")
     print(f"  LoRA rank: {custom_args.lora_r}, alpha: {custom_args.lora_r}")

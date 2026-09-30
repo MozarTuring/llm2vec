@@ -35,19 +35,16 @@ PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/run_layerw
 # MTEB(Eng, v2) retrieval tasks (Table 6 in paper, used in Figure 2)
 # PKQ_TASK_NAMES="ArguAna CQADupstackGamingRetrieval CQADupstackUnixRetrieval ClimateFEVERHardNegatives FEVERHardNegatives FiQA2018 HotpotQAHardNegatives SCIDOCS TRECCOVID Touche2020Retrieval.v3"
 
-# Pruning attribution on the lambda=1e-3 checkpoint: which cut costs the points?
-# Compare with 40/400 (70.8 / 58.9 / 62.3 / 19.2) and unpruned (86.3 / 68.8 / 67.5 / 26.0)
-# for FEVERHardNegatives / HotpotQAHardNegatives / Touche2020Retrieval.v3 / ClimateFEVERHardNegatives.
 
 # PKQ_TASK_NAMES="FEVERHardNegatives HotpotQAHardNegatives Touche2020Retrieval.v3 ClimateFEVERHardNegatives"
-#
-# PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py \
-#   --trained_checkpoint_path ${RUN_DIR_HOME}/project_remote_pkq/llm2vec_pikaq_backup/20260926_074205/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L26/checkpoint-3930 \
-#   --query_top_k 40 \
-#   --doc_top_k 0 \
-#   --output_dir results \
-#   --max_length 1024 \
-#   --task_name ${PKQ_TASK_NAMES}"
+
+ # PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py \
+ #   --trained_checkpoint_path ${RUN_DIR_HOME}/project_remote_pkq/llm2vec_pikaq_backup/20260929_132149/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L26/checkpoint-3930 \
+ #   --query_top_k 40 \
+ #   --doc_top_k 400 \
+ #   --output_dir results \
+ #   --max_length 1024 \
+ #   --task_name ${PKQ_TASK_NAMES}"
 
 
 # PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py --trained_checkpoint_path ${PKQ_DATA_DIR}/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L26/checkpoint-3930 --query_top_k 40 --doc_top_k 400 --output_dir results --max_length 1024 --task_name FEVERHardNegatives HotpotQAHardNegatives Touche2020Retrieval.v3 ClimateFEVERHardNegatives"
