@@ -1,6 +1,6 @@
 export PKQ_PYTHON="3.10"
-export PKQ_SERVER_NAME=arrhenius
-export PKQ_GPU_NUM=4
+export PKQ_SERVER_NAME=berzeliusampere
+export PKQ_GPU_NUM=8
 export PKQ_NODES_NUM=1
 export PKQ_RUN_TIME="1-00:00:00"
 export PKQ_SLURM_FILE=slurm.sh
@@ -11,4 +11,5 @@ export PKQ_INTERACTIVE=
 export MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
 export CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 export CUDA_VISIBLE_DEVICES=1
-export PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/run_layerwise_finetune.py     --config train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json     --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
+export PKQ_TASK_NAMES="ArguAna CQADupstackGamingRetrieval CQADupstackUnixRetrieval ClimateFEVERHardNegatives FEVERHardNegatives FiQA2018 HotpotQAHardNegatives SCIDOCS TRECCOVID Touche2020Retrieval.v3"
+export PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py    --trained_checkpoint_path ${RUN_DIR_HOME}/project_remote_pkq/llm2vec_pikaq_backup/20260930_110509/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L26/checkpoint-3930    --query_top_k 40    --doc_top_k 400    --output_dir results    --max_length 1024    --task_name ${PKQ_TASK_NAMES}"

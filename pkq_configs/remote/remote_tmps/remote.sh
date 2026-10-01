@@ -20,4 +20,4 @@ export MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
 export CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 export CUDA_VISIBLE_DEVICES=1
 export PKQ_TASK_NAMES="ArguAna CQADupstackGamingRetrieval CQADupstackUnixRetrieval ClimateFEVERHardNegatives FEVERHardNegatives FiQA2018 HotpotQAHardNegatives SCIDOCS TRECCOVID Touche2020Retrieval.v3"
-export PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py    --trained_checkpoint_path ${RUN_DIR_HOME}/project_remote_pkq/llm2vec_pikaq_backup/20260929_132149/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L26/checkpoint-3930    --query_top_k 40    --doc_top_k 400    --output_dir results    --max_length 1024    --task_name ${PKQ_TASK_NAMES}"
+export PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py    --trained_checkpoint_path ${RUN_DIR_HOME}/project_remote_pkq/llm2vec_pikaq_backup/20260930_110509/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L26/checkpoint-3930    --query_top_k 40    --doc_top_k 400    --output_dir results    --max_length 1024    --task_name ${PKQ_TASK_NAMES}"
