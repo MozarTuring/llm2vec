@@ -1,8 +1,8 @@
 PKQ_PYTHON="3.10"
-PKQ_SERVER_NAME=berzeliusampere
-PKQ_MODULES="Miniforge3 buildenv-gcccuda/12.4.1-gcc13.3.0"
-# PKQ_SERVER_NAME=arrhenius
-# PKQ_MODULES="GPU/Miniforge/26.3.2-2-eb"
+# PKQ_SERVER_NAME=berzeliusampere
+# PKQ_MODULES="Miniforge3 buildenv-gcccuda/12.4.1-gcc13.3.0"
+PKQ_SERVER_NAME=arrhenius
+PKQ_MODULES="GPU/Miniforge/26.3.2-2-eb"
 # PKQ_SERVER_NAME=greatrawr
 PKQ_GPU_NUM=8
 PKQ_NODES_NUM=1
@@ -12,7 +12,7 @@ PKQ_build_flashattn=
 PKQ_NOTEBOOK=
 PKQ_INTERACTIVE=
 
-MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
+MEM_PER_TASK="$((40 * PKQ_GPU_NUM))G"
 CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 
 CUDA_VISIBLE_DEVICES=1
@@ -29,23 +29,23 @@ CUDA_VISIBLE_DEVICES=1
 # PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/run_layerwise_finetune.py \
 #     --config train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json \
 #     --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
+#
 
 # BEIR 13 tasks (Table 5 in paper)
 # PKQ_TASK_NAMES="SciFact ArguAna ClimateFEVER DBPedia FEVER FiQA2018 HotpotQA NFCorpus NQ QuoraRetrieval SCIDOCS TRECCOVID Touche2020"
 
-# MTEB(Eng, v2) retrieval tasks (Table 6 in paper, used in Figure 2)
-PKQ_TASK_NAMES="ArguAna CQADupstackGamingRetrieval CQADupstackUnixRetrieval ClimateFEVERHardNegatives FEVERHardNegatives FiQA2018 HotpotQAHardNegatives SCIDOCS TRECCOVID Touche2020Retrieval.v3"
-
-
 # PKQ_TASK_NAMES="FEVERHardNegatives HotpotQAHardNegatives Touche2020Retrieval.v3 ClimateFEVERHardNegatives"
 
- PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py \
-   --trained_checkpoint_path ${RUN_DIR_HOME}/project_remote_pkq/llm2vec_pikaq_backup/20260930_110509/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L26/checkpoint-3930 \
-   --query_top_k 40 \
-   --doc_top_k 400 \
-   --output_dir results \
-   --max_length 1024 \
-   --task_name ${PKQ_TASK_NAMES}"
+PKQ_TASK_NAMES="ArguAna"
+#CQADupstackGamingRetrieval CQADupstackUnixRetrieval ClimateFEVERHardNegatives FEVERHardNegatives FiQA2018 HotpotQAHardNegatives SCIDOCS TRECCOVID Touche2020Retrieval.v3"
+
+PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py \
+--trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20260930_110509/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L26/checkpoint-3930 \
+--query_top_k 40 \
+--doc_top_k 400 \
+--output_dir results \
+--max_length 1024 \
+--task_name ${PKQ_TASK_NAMES}"
 
 
 # PKQ_RUN_COMMAND="python experiments/mteb_eval_splade.py --output_dir results_splade_v3_nopool"

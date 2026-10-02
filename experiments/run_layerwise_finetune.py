@@ -519,6 +519,9 @@ class DataArguments:
 @dataclass
 class CustomArguments:
     lora_r: int = field(default=16, metadata={"help": "LoRA rank."})
+    lora_alpha: Optional[int] = field(
+        default=None, metadata={"help": "LoRA alpha. Defaults to lora_r."}
+    )
     lora_dropout: float = field(default=0.05, metadata={"help": "LoRA dropout."})
     lora_layers: int = field(
         default=31,
@@ -697,7 +700,7 @@ def main():
     model = initialize_peft(
         model,
         lora_r=custom_args.lora_r,
-        lora_alpha=custom_args.lora_r,
+        lora_alpha=custom_args.lora_alpha or custom_args.lora_r,
         lora_dropout=custom_args.lora_dropout,
     )
 
@@ -752,7 +755,7 @@ def main():
     print(f"  FLOPS chunk size: {flops_chunk_size or 'whole per-device batch'}")
     print(f"  Backbone: {num_active} layers (0-{custom_args.lora_layers})")
     print(f"  Hidden size: {hidden_size}")
-    print(f"  LoRA rank: {custom_args.lora_r}, alpha: {custom_args.lora_r}")
+    print(f"  LoRA rank: {custom_args.lora_r}, alpha: {custom_args.lora_alpha or custom_args.lora_r}")
 
     # ── Load dataset ──────────────────────────────────────────
     train_dataset = MSMARCOHardNegDataset(

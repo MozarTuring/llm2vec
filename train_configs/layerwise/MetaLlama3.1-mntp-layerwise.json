@@ -1,11 +1,12 @@
 {
     "model_name_or_path": "meta-llama/Meta-Llama-3.1-8B",
-    "peft_model_name_or_path": "../llm2vec_pikaq_backup/20260929_065038/output/mntp/Meta-Llama-3.1-8B-msmarco",
+    "peft_model_name_or_path": "../remote_data/backup/llm2vec/20260929_065038/output/mntp/Meta-Llama-3.1-8B-msmarco",
     "torch_dtype": "bfloat16",
     "attn_implementation": "sdpa",
     "num_hard_negatives": 8,
     "max_seq_length": 128,
     "lora_r": 64,
+    "lora_alpha": 128,
     "lora_layers": 26,
     "sae_expansion": 32,
     "per_device_train_batch_size": 32,
