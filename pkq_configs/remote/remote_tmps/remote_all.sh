@@ -1,15 +1,14 @@
 
 set -e
-# change the following vars based on your preference, and then make sure this repo is cloned to /proj/berzelius-aiics-real/users/x_jinma/project_remote_pkq/llm2vec_pikaq
-export RUN_DIR_HOME=/proj/berzelius-aiics-real/users/x_jinma
-export RUN_PROJ=llm2vec_pikaq
-export PKQ_DATA_DIR=/proj/berzelius-aiics-real/users/x_jinma/project_remote_pkq/remote_data/llm2vec
+# set following vars based on your setting, and then make sure this repo is cloned to /proj/berzelius-aiics-real/users/x_jinma/project_remote_pkq/llm2vec_pikaq
+export RUN_DIR_HOME=
+export RUN_PROJ=
 
 cd ${RUN_DIR_HOME}/project_remote_pkq/${RUN_PROJ}
 export PKQ_PYTHON="3.10"
 export PKQ_SERVER_NAME=berzeliusampere
 export PKQ_MODULES="Miniforge3 buildenv-gcccuda/12.4.1-gcc13.3.0"
-export PKQ_GPU_NUM=8
+export PKQ_GPU_NUM=4
 export PKQ_NODES_NUM=1
 export PKQ_RUN_TIME="1-00:00:00"
 export PKQ_SLURM_FILE=slurm.sh
@@ -19,11 +18,10 @@ export PKQ_INTERACTIVE=
 export MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
 export CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 export CUDA_VISIBLE_DEVICES=1
-export PKQ_TASK_NAMES="ArguAna CQADupstackGamingRetrieval CQADupstackUnixRetrieval ClimateFEVERHardNegatives FEVERHardNegatives FiQA2018 HotpotQAHardNegatives SCIDOCS TRECCOVID Touche2020Retrieval.v3"
-export PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py    --trained_checkpoint_path ${RUN_DIR_HOME}/project_remote_pkq/llm2vec_pikaq_backup/20260930_110509/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L26/checkpoint-3930    --query_top_k 40    --doc_top_k 400    --output_dir results    --max_length 1024    --task_name ${PKQ_TASK_NAMES}"
+export PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/run_layerwise_finetune.py     --config train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json     --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
 if [ -z  ]; then
     export PKQ_CONDAENV=/proj/berzelius-aiics-real/users/x_jinma/pkqcondaenv/llm2vec_pikaq
     export PKQ_WHEELS=/proj/berzelius-aiics-real/users/x_jinma/pkqwheels/llm2vec_pikaq
 fi
 echo "condaenv path "
-sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkqlogs/20261002_002136/job-%j.out --error=pkqlogs/20261002_002136/job-%j.out --nodelist=node[061-064,065,066-093] --gpus=8 --cpus-per-task=64 --mem=192G  -A berzelius-2026-243  --partition=berzelius pkq_configs/remote/remote_tmps/slurm.sh
+sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkqlogs/20261002_194252/job-%j.out --error=pkqlogs/20261002_194252/job-%j.out --nodelist=node[061-064,065,066-093] --gpus=4 --cpus-per-task=32 --mem=96G  -A berzelius-2026-243  --partition=berzelius pkq_configs/remote/remote_tmps/slurm.sh
