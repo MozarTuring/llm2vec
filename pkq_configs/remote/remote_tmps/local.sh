@@ -1,12 +1,12 @@
 export PKQ_PYTHON="3.10"
 export PKQ_SERVER_NAME=berzeliusampere
+export PKQ_MODULES="Miniforge3 buildenv-gcccuda/12.4.1-gcc13.3.0"
 export PKQ_GPU_NUM=8
 export PKQ_NODES_NUM=1
 export PKQ_RUN_TIME="1-00:00:00"
 export PKQ_SLURM_FILE=slurm.sh
 export PKQ_build_flashattn=
 export PKQ_NOTEBOOK=
-export PKQ_MODULES="GPU/Miniforge/26.3.2-2-eb"
 export PKQ_INTERACTIVE=
 export MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
 export CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))

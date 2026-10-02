@@ -1,6 +1,8 @@
 PKQ_PYTHON="3.10"
 PKQ_SERVER_NAME=berzeliusampere
+PKQ_MODULES="Miniforge3 buildenv-gcccuda/12.4.1-gcc13.3.0"
 # PKQ_SERVER_NAME=arrhenius
+# PKQ_MODULES="GPU/Miniforge/26.3.2-2-eb"
 # PKQ_SERVER_NAME=greatrawr
 PKQ_GPU_NUM=8
 PKQ_NODES_NUM=1
@@ -8,7 +10,6 @@ PKQ_RUN_TIME="1-00:00:00"
 PKQ_SLURM_FILE=slurm.sh
 PKQ_build_flashattn=
 PKQ_NOTEBOOK=
-PKQ_MODULES="GPU/Miniforge/26.3.2-2-eb"
 PKQ_INTERACTIVE=
 
 MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
