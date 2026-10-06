@@ -467,30 +467,8 @@ MTEB_ENG_V2_RETRIEVAL = [
 ]
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--trained_checkpoint_path", type=str, required=True,
-                        help="Path to trained checkpoint dir (contains train config JSON).")
-    parser.add_argument("--model_name_or_path", type=str)
-    parser.add_argument("--peft_model_name_or_path", type=str)
-    parser.add_argument("--sae_weights_path", type=str)
-    parser.add_argument("--lora_layers", type=int)
-    parser.add_argument("--task_name", type=str, nargs="*")
-    parser.add_argument("--task_type", type=str, choices=["retrieval", "all"])
-    parser.add_argument("--output_dir", type=str)
-    parser.add_argument("--query_top_k", type=int, default=40, help="0 disables pruning.")
-    parser.add_argument("--doc_top_k", type=int, default=400, help="0 disables pruning.")
-    parser.add_argument("--max_length", type=int, default=1024)
-    parser.add_argument("--hard_negatives_file", type=str)
-    parser.add_argument("--num_hard_negatives", type=int)
-    parser.add_argument("--temperature", type=float)
-    parser.add_argument("--lambda_q", type=float)
-    parser.add_argument("--lambda_d", type=float)
-    parser.add_argument("--max_seq_length", type=int)
-    args = parser.parse_args()
-    args.query_top_k = args.query_top_k or None
-    args.doc_top_k = args.doc_top_k or None
-
+def resolve_checkpoint_args(args, parser):
+    """Fill model/SAE args from the train config next to the checkpoint (in place)."""
     # Auto-discover train config JSON from parent of checkpoint dir
     parent_dir = os.path.dirname(os.path.normpath(args.trained_checkpoint_path))
     config_candidates = [f for f in os.listdir(parent_dir)
@@ -538,6 +516,32 @@ if __name__ == "__main__":
     missing = [k for k in required if getattr(args, k, None) is None]
     if missing:
         parser.error(f"Missing required arguments (set via config or CLI): {missing}")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--trained_checkpoint_path", type=str, required=True,
+                        help="Path to trained checkpoint dir (contains train config JSON).")
+    parser.add_argument("--model_name_or_path", type=str)
+    parser.add_argument("--peft_model_name_or_path", type=str)
+    parser.add_argument("--sae_weights_path", type=str)
+    parser.add_argument("--lora_layers", type=int)
+    parser.add_argument("--task_name", type=str, nargs="*")
+    parser.add_argument("--task_type", type=str, choices=["retrieval", "all"])
+    parser.add_argument("--output_dir", type=str)
+    parser.add_argument("--query_top_k", type=int, default=40, help="0 disables pruning.")
+    parser.add_argument("--doc_top_k", type=int, default=400, help="0 disables pruning.")
+    parser.add_argument("--max_length", type=int, default=1024)
+    parser.add_argument("--hard_negatives_file", type=str)
+    parser.add_argument("--num_hard_negatives", type=int)
+    parser.add_argument("--temperature", type=float)
+    parser.add_argument("--lambda_q", type=float)
+    parser.add_argument("--lambda_d", type=float)
+    parser.add_argument("--max_seq_length", type=int)
+    args = parser.parse_args()
+    args.query_top_k = args.query_top_k or None
+    args.doc_top_k = args.doc_top_k or None
+    resolve_checkpoint_args(args, parser)
 
     import traceback
     try:

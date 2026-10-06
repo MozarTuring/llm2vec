@@ -18,10 +18,11 @@ export PKQ_INTERACTIVE=
 export MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
 export CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 export CUDA_VISIBLE_DEVICES=1
-export PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/run_layerwise_finetune.py     --config train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json     --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
+export PKQ_TASK_NAMES="ArguAna CQADupstackGamingRetrieval CQADupstackUnixRetrieval ClimateFEVERHardNegatives FEVERHardNegatives FiQA2018 HotpotQAHardNegatives SCIDOCS TRECCOVID Touche2020Retrieval.v3"
+export PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261002_195549/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L26/checkpoint-3930 --query_top_k 40 --doc_top_k 400 --output_dir results --max_length 1024 --task_name ${PKQ_TASK_NAMES}"
 if [ -z  ]; then
     export PKQ_CONDAENV=/proj/berzelius-aiics-real/users/x_jinma/pkqcondaenv/llm2vec_pikaq
     export PKQ_WHEELS=/proj/berzelius-aiics-real/users/x_jinma/pkqwheels/llm2vec_pikaq
 fi
 echo "condaenv path "
-sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkqlogs/20261002_194252/job-%j.out --error=pkqlogs/20261002_194252/job-%j.out --nodelist=node[061-064,065,066-093] --gpus=4 --cpus-per-task=32 --mem=96G  -A berzelius-2026-243  --partition=berzelius pkq_configs/remote/remote_tmps/slurm.sh
+sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkqlogs/20261003_171407/job-%j.out --error=pkqlogs/20261003_171407/job-%j.out --nodelist=node[061-064,065,066-093] --gpus=4 --cpus-per-task=32 --mem=96G  -A berzelius-2026-243  --partition=berzelius pkq_configs/remote/remote_tmps/slurm.sh
