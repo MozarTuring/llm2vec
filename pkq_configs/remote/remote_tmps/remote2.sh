@@ -1,5 +1,10 @@
-if [ -z  ]; then
-    export PKQ_CONDAENV=/proj/berzelius-aiics-real/users/x_jinma/pkqcondaenv/llm2vec_pikaq
-    export PKQ_WHEELS=/proj/berzelius-aiics-real/users/x_jinma/pkqwheels/llm2vec_pikaq
+if [[ -z ${PKQ_MODULES} ]]; then
+export PKQ_MODULES="GPU/Miniforge/26.3.2-2-eb"
 fi
-echo "condaenv path "
+export PKQ_ARCH="aarch64"
+
+if [ -z ${PKQ_CONDAENV} ]; then
+    export PKQ_CONDAENV=${RUN_DIR_HOME}/pkqcondaenv/${RUN_PROJ}
+    export PKQ_WHEELS=${RUN_DIR_HOME}/pkqwheels/${RUN_PROJ}
+fi
+echo "condaenv path ${PKQ_CONDAENV}"

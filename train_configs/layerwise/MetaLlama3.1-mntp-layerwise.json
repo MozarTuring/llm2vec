@@ -1,6 +1,6 @@
 {
     "model_name_or_path": "meta-llama/Meta-Llama-3.1-8B",
-    "peft_model_name_or_path": "../remote_data/llm2vec/backup/20260929_065038/output/mntp/Meta-Llama-3.1-8B-msmarco",
+    "peft_model_name_or_path": "../remote_data/llm2vec/backup/arrhenius/20260929_065038/output/mntp/Meta-Llama-3.1-8B-msmarco",
     "torch_dtype": "bfloat16",
     "attn_implementation": "sdpa",
     "num_hard_negatives": 8,
@@ -24,9 +24,9 @@
     "overwrite_output_dir": true,
     "do_train": true,
     "temperature": 80,
-    "lambda_q": 1e-4,
-    "lambda_d": 1e-4,
-    "flops_chunk_size": 8,
+    "lambda_q": 1e-3,
+    "lambda_d": 1e-3,
+    "flops_chunk_size": 0,
     "ddp_find_unused_parameters": true,
     "remove_unused_columns": false
 }

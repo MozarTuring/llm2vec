@@ -1,0 +1,61 @@
+check berzeliusampere,17708853
+22:34:15 - PENDING=1 
+check arrhenius,3452045
+22:34:16 - PENDING=1 
+check berzeliusampere,17708853
+22:34:49 - PENDING=1 
+check arrhenius,3452045
+22:34:50 - PENDING=1 
+check berzeliusampere,17708853
+22:35:27 - PENDING=1 
+check arrhenius,3452045
+22:35:29 - PENDING=1 
+check berzeliusampere,17708853
+22:36:01 - PENDING=1 
+check arrhenius,3452045
+22:36:03 - PENDING=1 
+check berzeliusampere,17708853
+22:36:35 - PENDING=1 
+check arrhenius,3452045
+22:36:37 - PENDING=1 
+check berzeliusampere,17708853
+22:37:09 - PENDING=1 
+check arrhenius,3452045
+22:37:11 - PENDING=1 
+check berzeliusampere,17708853
+22:37:43 - PENDING=1 
+check arrhenius,3452045
+22:37:47 - PENDING=1 
+check berzeliusampere,17708853
+22:38:24 - PENDING=1 
+check arrhenius,3452045
+22:38:26 - PENDING=1 
+check berzeliusampere,17708853
+22:38:59 - PENDING=1 
+check arrhenius,3452045
+22:39:01 - PENDING=1 
+check berzeliusampere,17708853
+22:39:36 - PENDING=1 
+check arrhenius,3452045
+22:39:39 - PENDING=1 
+check berzeliusampere,17708853
+22:40:11 - PENDING=1 
+check arrhenius,3452045
+22:40:13 - PENDING=1 
+check berzeliusampere,17708853
+22:40:52 - PENDING=1 
+check arrhenius,3452045
+22:40:54 - PENDING=1 
+check berzeliusampere,17708853
+22:41:26 - PENDING=1 
+check arrhenius,3452045
+Job 3452045 is now fully RUNNING.
+  RUNNING=1 
+arrhenius,3452045 is RUNNING, cancelling the others
+scancel berzeliusampere,17708853
+local dir: /Users/jinma63/project/zzzpkqoutput/llm2vec/20261006_223345
+Background monitor PID:
+ps -ef |grep 70338
+see logs at
+/Users/jinma63/project/zzzpkqoutput/llm2vec/20261006_223345
+20261006_223345
