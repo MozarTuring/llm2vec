@@ -1,3 +1,10 @@
+
+set -e
+# set following vars based on your setting, and then make sure this repo is cloned to /proj/berzelius-aiics-real/users/x_jinma/project_remote_pkq/llm2vec_pikaq
+export RUN_DIR_HOME=
+export RUN_PROJ=
+
+cd ${RUN_DIR_HOME}/project_remote_pkq/${RUN_PROJ}
 export PKQ_PYTHON="3.10"
 export PKQ_SERVER_NAME=berzeliusampere
 export PKQ_GPU_NUM=4

@@ -1,5 +1,12 @@
+
+set -e
+# set following vars based on your setting, and then make sure this repo is cloned to /nobackup/proj/disk/naiss2026-3-658/personal/jinma63/project_remote_pkq/llm2vec_pikaq
+export RUN_DIR_HOME=
+export RUN_PROJ=
+
+cd ${RUN_DIR_HOME}/project_remote_pkq/${RUN_PROJ}
 export PKQ_PYTHON="3.10"
-export PKQ_SERVER_NAME=berzeliusampere
+export PKQ_SERVER_NAME=arrhenius
 export PKQ_GPU_NUM=4
 export PKQ_NODES_NUM=1
 export PKQ_RUN_TIME="1-00:00:00"

@@ -1,35 +1,11 @@
-check berzeliusampere,17710328
-10:38:23 - PENDING=1 
-check arrhenius,3473493
-10:38:25 - PENDING=1 
-check berzeliusampere,17710328
-10:38:56 - PENDING=1 
-check arrhenius,3473493
-10:39:00 - PENDING=1 
-check berzeliusampere,17710328
-10:39:32 - PENDING=1 
-check arrhenius,3473493
-10:39:33 - PENDING=1 
-check berzeliusampere,17710328
-10:40:05 - PENDING=1 
-check arrhenius,3473493
-10:40:07 - PENDING=1 
-check berzeliusampere,17710328
-10:40:38 - PENDING=1 
-check arrhenius,3473493
-10:40:42 - PENDING=1 
-check berzeliusampere,17710328
-10:41:14 - CONFIGURING=1 
-check arrhenius,3473493
-10:41:16 - PENDING=1 
-check berzeliusampere,17710328
-Job 17710328 is now fully RUNNING.
+check berzeliusampere,17716009
+Job 17716009 is now fully RUNNING.
   RUNNING=1 
-berzeliusampere,17710328 is RUNNING, cancelling the others
-scancel arrhenius,3473493
-local dir: /Users/jinma63/project/zzzpkqoutput/llm2vec/20261007_103609
+berzeliusampere,17716009 is RUNNING, cancelling the others
+scancel arrhenius,3520630
+local dir: /Users/jinma63/project/zzzpkqoutput/llm2vec/20261008_131318
 Background monitor PID:
-ps -ef |grep 76761
+ps -ef |grep 35095
 see logs at
-/Users/jinma63/project/zzzpkqoutput/llm2vec/20261007_103609
-20261007_103609
+/Users/jinma63/project/zzzpkqoutput/llm2vec/20261008_131318
+20261008_131318
