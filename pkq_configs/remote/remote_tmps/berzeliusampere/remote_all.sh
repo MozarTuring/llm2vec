@@ -70,4 +70,4 @@ which pip
 # hf download OpenMOSS-Team/Llama3_1-8B-Base-LXR-32x --include "Llama3_1-8B-Base-L26R-32x/*"
 # hf download naver/splade-v3
 pip list > pkq_configs/packages.txt
-sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkqlogs/20261008_131318/job-%j.out --error=pkqlogs/20261008_131318/job-%j.out --nodelist=node[061-064,065,066-093] --gpus=4 --cpus-per-task=32 --mem=96G  -A berzelius-2026-243 --partition=berzelius pkq_configs/remote/remote_tmps/berzeliusampere/slurm.sh
+sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkqlogs/20261008_141258/job-%j.out --error=pkqlogs/20261008_141258/job-%j.out --nodelist=node[061-064,065,066-093] --gpus=4 --cpus-per-task=32 --mem=96G  -A berzelius-2026-243 --partition=berzelius pkq_configs/remote/remote_tmps/berzeliusampere/slurm.sh

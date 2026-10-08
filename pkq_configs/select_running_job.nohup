@@ -1,11 +1,1 @@
-check berzeliusampere,17716009
-Job 17716009 is now fully RUNNING.
-  RUNNING=1 
-berzeliusampere,17716009 is RUNNING, cancelling the others
-scancel arrhenius,3520630
-local dir: /Users/jinma63/project/zzzpkqoutput/llm2vec/20261008_131318
-Background monitor PID:
-ps -ef |grep 35095
-see logs at
-/Users/jinma63/project/zzzpkqoutput/llm2vec/20261008_131318
-20261008_131318
+

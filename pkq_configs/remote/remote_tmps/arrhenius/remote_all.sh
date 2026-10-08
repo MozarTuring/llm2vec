@@ -71,4 +71,4 @@ which pip
 # hf download OpenMOSS-Team/Llama3_1-8B-Base-LXR-32x --include "Llama3_1-8B-Base-L26R-32x/*"
 # hf download naver/splade-v3
 pip list > pkq_configs/packages.txt
-sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkqlogs/20261008_131347/job-%j.out --error=pkqlogs/20261008_131347/job-%j.out  --gres=gpu:4 --cpus-per-task=32 --mem=320G  -A naiss2026-3-658-gpu --partition=gpu pkq_configs/remote/remote_tmps/arrhenius/slurm.sh
+sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkqlogs/20261008_141344/job-%j.out --error=pkqlogs/20261008_141344/job-%j.out  --gres=gpu:4 --cpus-per-task=32 --mem=320G  -A naiss2026-3-658-gpu --partition=gpu pkq_configs/remote/remote_tmps/arrhenius/slurm.sh
