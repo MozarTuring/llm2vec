@@ -1,6 +1,6 @@
 PKQ_PYTHON="3.10"
 PKQ_SERVER_NAME=berzeliusampere
-# PKQ_SERVER_NAME=arrhenius
+PKQ_SERVER_NAME=arrhenius
 # PKQ_SERVER_NAME=greatrawr
 PKQ_GPU_NUM=4
 PKQ_NODES_NUM=1
@@ -16,6 +16,5 @@ CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 CUDA_VISIBLE_DEVICES=1
 
 
-PKQ_RUN_COMMAND="python experiments/dump_sparse.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261002_195549/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L26/checkpoint-3930 --output_dir sparse_dumps"
 
 

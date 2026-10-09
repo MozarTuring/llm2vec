@@ -12,6 +12,7 @@ plus per-query complementarity on nDCG@10 (who wins, oracle max of the two layer
 Fused runs are also saved as TREC run files in {output_dir}/runs/.
 
     python experiments/fuse_eval.py --dump_dir sparse_dumps --layers 0 26
+    python experiments/fuse_eval.py --dump_dir <dir_with_L0> <dir_with_L26> --layers 0 26
 """
 
 import argparse
@@ -86,7 +87,8 @@ def save_trec(run, path, tag):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dump_dir", type=str, default="sparse_dumps")
+    parser.add_argument("--dump_dir", type=str, nargs="+", default=["sparse_dumps"],
+                        help="one dir for both layers, or one per layer (in --layers order)")
     parser.add_argument("--layers", type=int, nargs=2, default=[0, 26])
     parser.add_argument("--task_name", type=str, nargs="+",
                         default=["SciFact", "NFCorpus", "ArguAna", "SCIDOCS"])
@@ -97,19 +99,20 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     a, b = args.layers
+    dir_a, dir_b = args.dump_dir if len(args.dump_dir) == 2 else args.dump_dir * 2
     qk, dk = args.query_top_k, args.doc_top_k
     hq, hd = qk // 2, dk // 2
     os.makedirs(os.path.join(args.output_dir, "runs"), exist_ok=True)
     results = {}
     for task in args.task_name:
-        with open(os.path.join(args.dump_dir, f"L{a}", task, "qrels.json")) as f:
+        with open(os.path.join(dir_a, f"L{a}", task, "qrels.json")) as f:
             qrels = json.load(f)
         qrels = {q: {d: int(g) for d, g in docs.items()} for q, docs in qrels.items()}
-        full_a, qids, dids = scores(args.dump_dir, a, task, qk, dk)
-        full_b, qids_b, dids_b = scores(args.dump_dir, b, task, qk, dk)
+        full_a, qids, dids = scores(dir_a, a, task, qk, dk)
+        full_b, qids_b, dids_b = scores(dir_b, b, task, qk, dk)
         assert qids == qids_b and dids == dids_b, "query/doc order differs between dumps"
-        half_a = scores(args.dump_dir, a, task, hq, hd)[0]
-        half_b = scores(args.dump_dir, b, task, hq, hd)[0]
+        half_a = scores(dir_a, a, task, hq, hd)[0]
+        half_b = scores(dir_b, b, task, hq, hd)[0]
 
         runs = {
             f"L{a}": full_a, f"L{b}": full_b,

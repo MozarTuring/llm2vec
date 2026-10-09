@@ -10,4 +10,4 @@ export PKQ_INTERACTIVE=
 export MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
 export CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 export CUDA_VISIBLE_DEVICES=1
-export PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/run_layerwise_finetune.py     --config train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json     --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
+export PKQ_RUN_COMMAND="python experiments/fuse_eval.py --dump_dir ${PKQ_DATA_DIR}/backup/berzeliusampere/20261009_103719/sparse_dumps ${PKQ_DATA_DIR}/backup/berzeliusampere/20261009_105202/sparse_dumps --layers 0 26 --output_dir results_fusion"
