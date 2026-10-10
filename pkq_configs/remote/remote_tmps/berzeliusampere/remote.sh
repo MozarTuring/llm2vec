@@ -17,4 +17,4 @@ export PKQ_INTERACTIVE=
 export MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
 export CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 export CUDA_VISIBLE_DEVICES=1
-export PKQ_RUN_COMMAND="python experiments/dump_sparse.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/berzeliusampere/20261008_152419/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L26/checkpoint-3930 --output_dir sparse_dumps"
+export PKQ_RUN_COMMAND="python experiments/fuse_eval.py --dump_dir ${PKQ_DATA_DIR}/backup/berzeliusampere/20261009_103719/sparse_dumps ${PKQ_DATA_DIR}/backup/berzeliusampere/20261009_105202/sparse_dumps --layers 0 26 --output_dir results_fusion"

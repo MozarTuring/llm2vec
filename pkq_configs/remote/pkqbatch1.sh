@@ -24,9 +24,9 @@ CUDA_VISIBLE_DEVICES=1
 
 # PKQ_RUN_COMMAND="python experiments/reranker.py rerank ${PKQ_DATA_DIR}/msmarco_hard_negatives_v2_parts --queries-per-batch 2 --output ${PKQ_DATA_DIR}/reranker_parts"
 
-# PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/run_layerwise_finetune.py \
-#     --config train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json \
-#     --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
+PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/run_layerwise_finetune.py \
+    --config train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json \
+    --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
 
 
 # BEIR 13 tasks (Table 5 in paper)
@@ -47,7 +47,7 @@ CUDA_VISIBLE_DEVICES=1
 
 # PKQ_RUN_COMMAND="python experiments/dump_sparse.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/berzeliusampere/20261008_152419/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L26/checkpoint-3930 --output_dir sparse_dumps"
 
-PKQ_RUN_COMMAND="python experiments/fuse_eval.py --dump_dir ${PKQ_DATA_DIR}/backup/berzeliusampere/20261009_103719/sparse_dumps ${PKQ_DATA_DIR}/backup/berzeliusampere/20261009_105202/sparse_dumps --layers 0 26 --output_dir results_fusion"
+# PKQ_RUN_COMMAND="python experiments/fuse_eval.py --dump_dir ${PKQ_DATA_DIR}/backup/berzeliusampere/20261009_103719/sparse_dumps ${PKQ_DATA_DIR}/backup/berzeliusampere/20261009_105202/sparse_dumps --layers 0 26 --output_dir results_fusion"
 
 # PKQ_RUN_COMMAND="python experiments/mteb_eval_splade.py --output_dir results_splade_v3_nopool"
 
