@@ -17,18 +17,12 @@ export PKQ_INTERACTIVE=
 export MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
 export CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 export CUDA_VISIBLE_DEVICES=1
-export PKQ_RUN_COMMAND="python experiments/fuse_eval.py --dump_dir ${PKQ_DATA_DIR}/backup/berzeliusampere/20261009_103719/sparse_dumps ${PKQ_DATA_DIR}/backup/berzeliusampere/20261009_105202/sparse_dumps --layers 0 26 --output_dir results_fusion"
+export PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/run_layerwise_finetune.py     --config train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json     --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
 if [[ -z ${PKQ_MODULES} ]]; then
 export PKQ_MODULES="GPU/Miniforge/26.3.2-2-eb"
 fi
 export PKQ_LOGIN_MODULES="Miniforge/26.3.2-2-eb"
 export PKQ_ARCH="aarch64"
-
-if [ -z ${PKQ_CONDAENV} ]; then
-    export PKQ_CONDAENV=${RUN_DIR_HOME}/pkqcondaenv/${RUN_PROJ}
-    export PKQ_WHEELS=${RUN_DIR_HOME}/pkqwheels/${RUN_PROJ}
-fi
-echo "condaenv path ${PKQ_CONDAENV}"
 module --force purge
 module load ${PKQ_LOGIN_MODULES}
 PKQTMP=${RUN_DIR_HOME}/pkqcondaenv/pkqbase
@@ -52,10 +46,18 @@ pip install -q huggingface_hub
 # hf download OpenMOSS-Team/Llama3_1-8B-Base-LXR-32x --include "Llama3_1-8B-Base-L26R-32x/*"
 # hf download naver/splade-v3
 
-hf download OpenMOSS-Team/Llama3_1-8B-Base-LXR-32x --include "Llama3_1-8B-Base-L0R-32x/*"
+# hf download OpenMOSS-Team/Llama3_1-8B-Base-LXR-32x --include "Llama3_1-8B-Base-L0R-32x/*"
+
+hf download OpenMOSS-Team/Llama3_1-8B-Base-LXR-32x --include "Llama3_1-8B-Base-L16R-32x/*"
+
 module --force purge
 module load ${PKQ_MODULES}
 
+if [ -z ${PKQ_CONDAENV} ]; then
+    export PKQ_CONDAENV=${RUN_DIR_HOME}/pkqcondaenv/${RUN_PROJ}
+    export PKQ_WHEELS=${RUN_DIR_HOME}/pkqwheels/${RUN_PROJ}
+fi
+echo "condaenv path ${PKQ_CONDAENV}"
 if [[ ! -d ${PKQ_CONDAENV}${PKQ_ARCH} ]]; then
     conda create -p ${PKQ_CONDAENV}${PKQ_ARCH} python=${PKQ_PYTHON} pip -y
 fi
@@ -85,4 +87,4 @@ which pip
 #
 
 pip list > pkq_configs/packages.txt
-sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkqlogs/20261009_111940/job-%j.out --error=pkqlogs/20261009_111940/job-%j.out  --gres=gpu:4 --cpus-per-task=32 --mem=320G  -A naiss2026-3-658-gpu --partition=gpu pkq_configs/remote/remote_tmps/arrhenius/slurm.sh
+sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkqlogs/20261010_114129/job-%j.out --error=pkqlogs/20261010_114129/job-%j.out  --gres=gpu:4 --cpus-per-task=32 --mem=320G  -A naiss2026-3-658-gpu --partition=gpu pkq_configs/remote/remote_tmps/arrhenius/slurm.sh

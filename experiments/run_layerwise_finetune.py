@@ -606,11 +606,6 @@ def main():
     # Force inferred output_dir (no CLI override)
     training_args.output_dir = inferred_output_dir
 
-    # Copy the config file to output dir
-    os.makedirs(training_args.output_dir, exist_ok=True)
-    import shutil
-    shutil.copy2(json_file, os.path.join(training_args.output_dir, os.path.basename(json_file)))
-
     if training_args.gradient_checkpointing:
         training_args.gradient_checkpointing_kwargs = {"use_reentrant": False}
 

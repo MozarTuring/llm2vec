@@ -467,15 +467,23 @@ MTEB_ENG_V2_RETRIEVAL = [
 ]
 
 
+def infer_config_path(ckpt_path, parser):
+    """<root>/output/<group>/<run>/checkpoint-N -> the single JSON in <root>/train_configs/<group>/."""
+    run_dir = os.path.dirname(os.path.normpath(ckpt_path))
+    group_dir = os.path.dirname(run_dir)
+    output_dir = os.path.dirname(group_dir)
+    if os.path.basename(output_dir) != "output":
+        parser.error(f"Expected <root>/output/<group>/<run>/checkpoint-N, got {ckpt_path}")
+    config_dir = os.path.join(os.path.dirname(output_dir), "train_configs", os.path.basename(group_dir))
+    candidates = sorted(f for f in os.listdir(config_dir) if f.endswith(".json"))
+    if len(candidates) != 1:
+        parser.error(f"Expected exactly one config JSON in {config_dir}, found {candidates}")
+    return os.path.join(config_dir, candidates[0])
+
+
 def resolve_checkpoint_args(args, parser):
-    """Fill model/SAE args from the train config next to the checkpoint (in place)."""
-    # Auto-discover train config JSON from parent of checkpoint dir
-    parent_dir = os.path.dirname(os.path.normpath(args.trained_checkpoint_path))
-    config_candidates = [f for f in os.listdir(parent_dir)
-                         if f.endswith(".json")]
-    if not config_candidates:
-        parser.error(f"No config JSON found in {parent_dir}")
-    config_path = os.path.join(parent_dir, config_candidates[0])
+    """Fill model/SAE args from the train config inferred from the checkpoint path (in place)."""
+    config_path = infer_config_path(args.trained_checkpoint_path, parser)
     print(f"Loading train config from {config_path}")
     with open(config_path) as f:
         cfg = json.load(f)
