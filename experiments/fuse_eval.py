@@ -6,6 +6,7 @@ pytrec_eval, the evaluator MTEB uses, so numbers are comparable to MTEB results.
 For each task, reports nDCG@10 and recall@100 for
     single     each layer alone (q=40, d=400)      sanity check vs. MTEB
     rrf        RRF of the two runs
+    per-query  nDCG@10 win rate of each layer and oracle max (mean of per-query max)
 Fused runs are also saved as TREC run files in {output_dir}/runs/.
 
     python experiments/fuse_eval.py --dump_dir sparse_dumps --layers 0 26
@@ -68,9 +69,9 @@ def to_run(s, qids, dids, depth=DEPTH):
 
 
 def evaluate(run, qrels, qids):
-    """Mean of each measure over qids (a query with no retrieved docs counts as 0)."""
+    """Per-query value of each measure, in qids order (a query with no retrieved docs counts as 0)."""
     per_query = pytrec_eval.RelevanceEvaluator(qrels, set(MEASURES)).evaluate(run)
-    return {name: float(np.mean([per_query.get(q, {}).get(m, 0.0) for q in qids]))
+    return {name: np.array([per_query.get(q, {}).get(m, 0.0) for q in qids])
             for m, name in MEASURES.items()}
 
 
@@ -111,18 +112,29 @@ if __name__ == "__main__":
             f"L{a}": full_a, f"L{b}": full_b,
             "rrf": rrf(full_a, full_b, k=args.rrf_k),
         }
-        r = {}
+        per_query = {}
         for name, s in runs.items():
             run = to_run(s, qids, dids)
-            r[name] = evaluate(run, qrels, qids)
+            per_query[name] = evaluate(run, qrels, qids)
             if name == "rrf":
                 save_trec(run, os.path.join(args.output_dir, "runs", f"{task}.{name}.trec"), name)
+        r = {name: {m: float(v.mean()) for m, v in pq.items()} for name, pq in per_query.items()}
+        # Per-query nDCG@10: how often each layer is strictly better, and the mean of the per-query max
+        nd_a, nd_b = per_query[f"L{a}"]["ndcg@10"], per_query[f"L{b}"]["ndcg@10"]
+        r["per_query_ndcg@10"] = {
+            f"L{a}_wins": float((nd_a > nd_b).mean()),
+            f"L{b}_wins": float((nd_b > nd_a).mean()),
+            "oracle_max": float(np.maximum(nd_a, nd_b).mean()),
+        }
         results[task] = r
 
         print(f"\n=== {task} ({len(qids)} queries, {len(dids)} docs) ===  ndcg@10 / recall@100")
         fmt = lambda n: f"{r[n]['ndcg@10']:.4f} / {r[n]['recall@100']:.4f}"
         print(f"  single (q={qk}, d={dk}):  L{a}={fmt(f'L{a}')}  L{b}={fmt(f'L{b}')}")
-        print(f"  rrf:                     {fmt('rrf')}", flush=True)
+        print(f"  rrf:                     {fmt('rrf')}")
+        pq = r["per_query_ndcg@10"]
+        print(f"  per-query ndcg@10: L{a} wins {pq[f'L{a}_wins']:.1%}, L{b} wins {pq[f'L{b}_wins']:.1%}, "
+              f"oracle max={pq['oracle_max']:.4f}", flush=True)
 
     out = os.path.join(args.output_dir, "results.json")
     with open(out, "w") as f:
