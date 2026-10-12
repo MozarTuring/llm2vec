@@ -61,4 +61,7 @@ CUDA_VISIBLE_DEVICES=1
 #     --sae_weights_path ${PKQ_DATA_DIR}/Llama3_1-8B-Base-L0R-8x/checkpoints/final.safetensors"
 
 
-PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/run_multilayer_finetune.py --config train_configs/multilayer/MetaLlama3.1-mntp-L16_26.json --hard_negatives_file /proj/berzelius-aiics-real/users/x_jinma/project_remote_pkq/remote_data/llm2vec/reranker_parts/"
+# PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/run_multilayer_finetune.py --config train_configs/multilayer/MetaLlama3.1-mntp-L16_26.json --hard_negatives_file /proj/berzelius-aiics-real/users/x_jinma/project_remote_pkq/remote_data/llm2vec/reranker_parts/"
+
+
+PKQ_RUN_COMMAND="python experiments/mteb_eval_multilayer.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261012_093224/output/multilayer/Meta-Llama-3.1-8B-msmarco-mntp-L16+26/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS --output_dir results_mteb_multilayer"
