@@ -11,6 +11,7 @@ Fused runs are also saved as TREC run files in {output_dir}/runs/.
 
     python experiments/fuse_eval.py --dump_dir sparse_dumps --layers 0 26
     python experiments/fuse_eval.py --dump_dir <dir_with_L0> <dir_with_L26> --layers 0 26
+    python experiments/fuse_eval.py --dump_dir <seed_a_dir> <seed_b_dir> --layers 16 16
 """
 
 import argparse
@@ -96,6 +97,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     a, b = args.layers
+    # Run labels; suffixed when both runs are the same layer (e.g. two seeds of L16)
+    la, lb = (f"L{a}", f"L{b}") if a != b else (f"L{a}a", f"L{b}b")
     dir_a, dir_b = args.dump_dir if len(args.dump_dir) == 2 else args.dump_dir * 2
     qk, dk = args.query_top_k, args.doc_top_k
     os.makedirs(os.path.join(args.output_dir, "runs"), exist_ok=True)
@@ -109,7 +112,7 @@ if __name__ == "__main__":
         assert qids == qids_b and dids == dids_b, "query/doc order differs between dumps"
 
         runs = {
-            f"L{a}": full_a, f"L{b}": full_b,
+            la: full_a, lb: full_b,
             "rrf": rrf(full_a, full_b, k=args.rrf_k),
         }
         per_query = {}
@@ -120,20 +123,20 @@ if __name__ == "__main__":
                 save_trec(run, os.path.join(args.output_dir, "runs", f"{task}.{name}.trec"), name)
         r = {name: {m: float(v.mean()) for m, v in pq.items()} for name, pq in per_query.items()}
         # Per-query nDCG@10: how often each layer is strictly better, and the mean of the per-query max
-        nd_a, nd_b = per_query[f"L{a}"]["ndcg@10"], per_query[f"L{b}"]["ndcg@10"]
+        nd_a, nd_b = per_query[la]["ndcg@10"], per_query[lb]["ndcg@10"]
         r["per_query_ndcg@10"] = {
-            f"L{a}_wins": float((nd_a > nd_b).mean()),
-            f"L{b}_wins": float((nd_b > nd_a).mean()),
+            f"{la}_wins": float((nd_a > nd_b).mean()),
+            f"{lb}_wins": float((nd_b > nd_a).mean()),
             "oracle_max": float(np.maximum(nd_a, nd_b).mean()),
         }
         results[task] = r
 
         print(f"\n=== {task} ({len(qids)} queries, {len(dids)} docs) ===  ndcg@10 / recall@100")
         fmt = lambda n: f"{r[n]['ndcg@10']:.4f} / {r[n]['recall@100']:.4f}"
-        print(f"  single (q={qk}, d={dk}):  L{a}={fmt(f'L{a}')}  L{b}={fmt(f'L{b}')}")
+        print(f"  single (q={qk}, d={dk}):  {la}={fmt(la)}  {lb}={fmt(lb)}")
         print(f"  rrf:                     {fmt('rrf')}")
         pq = r["per_query_ndcg@10"]
-        print(f"  per-query ndcg@10: L{a} wins {pq[f'L{a}_wins']:.1%}, L{b} wins {pq[f'L{b}_wins']:.1%}, "
+        print(f"  per-query ndcg@10: {la} wins {pq[f'{la}_wins']:.1%}, {lb} wins {pq[f'{lb}_wins']:.1%}, "
               f"oracle max={pq['oracle_max']:.4f}", flush=True)
 
     out = os.path.join(args.output_dir, "results.json")

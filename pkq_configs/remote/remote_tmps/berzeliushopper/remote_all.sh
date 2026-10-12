@@ -86,4 +86,4 @@ which pip
 #
 
 pip list > pkq_configs/packages.txt
-sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkq_configs/logs_20261011_125147/job-%j.out --error=pkq_configs/logs_20261011_125147/job-%j.out  --gpus=0 --cpus-per-task=32 --mem=128G  -A berzelius-2026-243 --partition=berzelius-hopper-cpu pkq_configs/remote/remote_tmps/berzeliushopper/slurm.sh
+sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkq_configs/logs_20261011_133027/job-%j.out --error=pkq_configs/logs_20261011_133027/job-%j.out  --gpus=0 --cpus-per-task=32 --mem=128G  -A berzelius-2026-243 --partition=berzelius-hopper-cpu pkq_configs/remote/remote_tmps/berzeliushopper/slurm.sh
