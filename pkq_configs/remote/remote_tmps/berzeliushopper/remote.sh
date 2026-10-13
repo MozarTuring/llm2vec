@@ -17,4 +17,4 @@ export PKQ_INTERACTIVE=
 export MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
 export CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 export CUDA_VISIBLE_DEVICES=1
-export PKQ_RUN_COMMAND="python experiments/mteb_eval_multilayer.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261012_093224/output/multilayer/Meta-Llama-3.1-8B-msmarco-mntp-L16+26/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS --output_dir results_mteb_multilayer"
+export PKQ_RUN_COMMAND="torchrun --nproc_per_node=4 experiments/run_docside_finetune.py --config train_configs/docside/MetaLlama3.1-mntp-docside.json --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
