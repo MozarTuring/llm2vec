@@ -70,4 +70,7 @@ CUDA_VISIBLE_DEVICES=1
 # PKQ_RUN_COMMAND="torchrun --nproc_per_node=4 experiments/run_docside_finetune.py --config train_configs/docside/MetaLlama3.1-mntp-docside.json --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
 
 
-PKQ_RUN_COMMAND="python experiments/mteb_eval_docside.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261013_093756/output/docside/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS --output_dir results_mteb_docside"
+# PKQ_RUN_COMMAND="python experiments/mteb_eval_docside.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261013_093756/output/docside/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS --output_dir results_mteb_docside"
+
+
+PKQ_RUN_COMMAND="python experiments/sae_inject_qa.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261010_125818/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930 --output_dir results_sae_inject"
