@@ -74,6 +74,8 @@ if __name__ == "__main__":
     parser.add_argument("--query_top_k", type=int, default=40, help="0 disables pruning.")
     parser.add_argument("--doc_top_k", type=int, default=400, help="0 disables pruning.")
     parser.add_argument("--max_length", type=int, default=1024)
+    parser.add_argument("--no_gate", action="store_true",
+                        help="Skip the gate (gain 1, bias 0): untrained mntp SPLARE baseline.")
     args = parser.parse_args()
     args.query_top_k = args.query_top_k or None
     args.doc_top_k = args.doc_top_k or None
@@ -88,7 +90,10 @@ if __name__ == "__main__":
             trained_checkpoint_path=None,
             max_length=args.max_length,
         )
-        add_gate(encoder, os.path.join(args.trained_checkpoint_path, "featgate.pt"))
+        if args.no_gate:
+            print("No gate: untrained mntp SPLARE baseline")
+        else:
+            add_gate(encoder, os.path.join(args.trained_checkpoint_path, "featgate.pt"))
         model = MTEBWrapper(encoder, query_top_k=args.query_top_k, doc_top_k=args.doc_top_k,
                             max_length=args.max_length)
         tasks = mteb.get_tasks(tasks=args.task_name)
