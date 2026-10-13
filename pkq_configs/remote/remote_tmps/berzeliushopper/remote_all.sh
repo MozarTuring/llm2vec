@@ -17,7 +17,7 @@ export PKQ_INTERACTIVE=
 export MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
 export CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 export CUDA_VISIBLE_DEVICES=1
-export PKQ_RUN_COMMAND="python experiments/feature_lexical_featgate.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261010_125818/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930 --featgate_path ${PKQ_DATA_DIR}/backup/20261013_155049/output/featgate/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930/featgate.pt"
+export PKQ_RUN_COMMAND="torchrun --nproc_per_node=4 experiments/run_toplayers_finetune.py --config train_configs/toplayers/MetaLlama3.1-mntp-toplayers.json --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
 if [[ -z ${PKQ_MODULES} ]]; then
 export PKQ_MODULES="Miniforge3"
 fi
@@ -86,4 +86,4 @@ which pip
 #
 
 pip list > pkq_configs/packages.txt
-sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkq_configs/logs_20261013_191445/job-%j.out --error=pkq_configs/logs_20261013_191445/job-%j.out  --gpus=4 --cpus-per-task=32 --mem=96G  -A berzelius-2026-243 --partition=berzelius-hopper pkq_configs/remote/remote_tmps/berzeliushopper/slurm.sh
+sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkq_configs/logs_20261013_194805/job-%j.out --error=pkq_configs/logs_20261013_194805/job-%j.out  --gpus=4 --cpus-per-task=32 --mem=96G  -A berzelius-2026-243 --partition=berzelius-hopper pkq_configs/remote/remote_tmps/berzeliushopper/slurm.sh
