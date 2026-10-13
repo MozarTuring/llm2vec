@@ -20,20 +20,27 @@ from mteb_eval_layerwise import EncodeModule, LayerwiseEncoder, MTEBWrapper, res
 
 
 class FeatGateEncodeModule(EncodeModule):
-    def __init__(self, module, log_gain, bias):
+    def __init__(self, module, log_gain, bias, chunk_size=8):
         super().__init__(module.backbone, module.sae, module.sae_norm_scale, module.bos_token_id,
                          module.jump_relu_threshold, module.sae_top_k)
         dtype = module.sae.weight.dtype
         self.register_buffer("gain", log_gain.exp().to(dtype))
         self.register_buffer("gate_bias", bias.to(dtype))
+        self.chunk_size = chunk_size
 
     def forward(self, input_ids, attention_mask):
-        outputs = self.backbone(input_ids=input_ids, attention_mask=attention_mask)
-        sae_pre = self.sae(outputs[0] * self.sae_norm_scale) * self.gain + self.gate_bias
-        sae_out = torch.log(1 + torch.relu(sae_pre))
-        pool_mask = attention_mask * (input_ids != self.bos_token_id)
-        sae_out = sae_out * pool_mask.unsqueeze(-1)
-        return sae_out.max(dim=1)[0]
+        # SAE, gate and pooling run on chunks of the batch, in place: the (B, L, 131k) tensors of a
+        # full planned batch are ~30 GB each and ran out of memory (eval run 20261013_183550).
+        hidden = self.backbone(input_ids=input_ids, attention_mask=attention_mask)[0] * self.sae_norm_scale
+        pool_mask = (attention_mask * (input_ids != self.bos_token_id)).unsqueeze(-1)
+        pooled = []
+        for i in range(0, hidden.shape[0], self.chunk_size):
+            sae_pre = self.sae(hidden[i:i + self.chunk_size])
+            sae_pre.mul_(self.gain).add_(self.gate_bias).relu_()
+            sae_out = torch.log(1 + sae_pre) * pool_mask[i:i + self.chunk_size]
+            pooled.append(sae_out.max(dim=1)[0])
+            del sae_pre, sae_out
+        return torch.cat(pooled)
 
 
 def add_gate(encoder, gate_path):
