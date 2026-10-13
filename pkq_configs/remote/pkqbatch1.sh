@@ -85,4 +85,6 @@ CUDA_VISIBLE_DEVICES=1
 
 # PKQ_RUN_COMMAND="python experiments/mteb_eval_featgate.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261013_155049/output/featgate/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS"
 
-PKQ_RUN_COMMAND="python experiments/mteb_eval_featgate.py --trained_checkpoint_path /proj/berzelius-aiics-real/users/x_jinma/project_remote_pkq/remote_data/llm2vec/backup/20261013_155049/output/featgate/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS --no_gate"
+# PKQ_RUN_COMMAND="python experiments/mteb_eval_featgate.py --trained_checkpoint_path /proj/berzelius-aiics-real/users/x_jinma/project_remote_pkq/remote_data/llm2vec/backup/20261013_155049/output/featgate/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS --no_gate"
+
+PKQ_RUN_COMMAND="python experiments/feature_lexical_featgate.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261010_125818/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930 --featgate_path ${PKQ_DATA_DIR}/backup/20261013_155049/output/featgate/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930/featgate.pt"
