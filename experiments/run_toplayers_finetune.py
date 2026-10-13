@@ -416,6 +416,13 @@ def initialize_peft(
     elif lora_modules is None:
         raise ValueError("lora_modules must be specified for this model.")
 
+    if layers_to_transform is not None:
+        # A regex string is full-matched against module names. PEFT's layers_pattern needs a dot
+        # before "layers", but the bare BiModel's names start with "layers.N." (run 20261013_195008).
+        layer_alt = "|".join(str(i) for i in layers_to_transform)
+        module_alt = "|".join(lora_modules)
+        lora_modules = rf"(.*\.)?layers\.({layer_alt})\.(self_attn|mlp)\.({module_alt})"
+
     config = LoraConfig(
         r=lora_r,
         lora_alpha=lora_alpha,
@@ -423,8 +430,6 @@ def initialize_peft(
         lora_dropout=lora_dropout,
         bias="none",
         task_type=None,
-        layers_to_transform=layers_to_transform,
-        layers_pattern="layers" if layers_to_transform is not None else None,
     )
 
     model = get_peft_model(model, config)
