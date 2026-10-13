@@ -17,4 +17,4 @@ export PKQ_INTERACTIVE=
 export MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
 export CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 export CUDA_VISIBLE_DEVICES=1
-export PKQ_RUN_COMMAND="python experiments/mteb_eval_docside.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261013_093756/output/docside/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS --output_dir results_mteb_docside"
+export PKQ_RUN_COMMAND="python experiments/sae_inject_qa.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261010_125818/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930 --output_dir results_sae_inject"

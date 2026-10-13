@@ -73,4 +73,6 @@ CUDA_VISIBLE_DEVICES=1
 # PKQ_RUN_COMMAND="python experiments/mteb_eval_docside.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261013_093756/output/docside/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS --output_dir results_mteb_docside"
 
 
-PKQ_RUN_COMMAND="python experiments/sae_inject_qa.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261010_125818/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930 --output_dir results_sae_inject"
+# PKQ_RUN_COMMAND="python experiments/sae_inject_qa.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261010_125818/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930 --output_dir results_sae_inject"
+
+PKQ_RUN_COMMAND="python experiments/feature_drift.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261010_125818/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930"
