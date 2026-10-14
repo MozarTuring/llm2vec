@@ -89,4 +89,11 @@ CUDA_VISIBLE_DEVICES=1
 
 # PKQ_RUN_COMMAND="python experiments/feature_lexical_featgate.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261010_125818/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930 --featgate_path ${PKQ_DATA_DIR}/backup/20261013_155049/output/featgate/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930/featgate.pt"
 
-PKQ_RUN_COMMAND="torchrun --nproc_per_node=4 experiments/run_toplayers_finetune.py --config train_configs/toplayers/MetaLlama3.1-mntp-toplayers.json --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
+# PKQ_RUN_COMMAND="torchrun --nproc_per_node=4 experiments/run_toplayers_finetune.py --config train_configs/toplayers/MetaLlama3.1-mntp-toplayers.json --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
+
+
+# PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261013_195353/output/toplayers/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS"
+
+# PKQ_RUN_COMMAND="python experiments/feature_lexical.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261013_195353/output/toplayers/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13/checkpoint-3930"
+
+PKQ_RUN_COMMAND="torchrun --nproc_per_node=4 experiments/run_anchor_finetune.py --config train_configs/anchor/MetaLlama3.1-mntp-anchor.json --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
