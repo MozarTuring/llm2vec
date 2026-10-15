@@ -1,7 +1,7 @@
 PKQ_PYTHON="3.10"
 PKQ_SERVER_NAME=berzeliushopper
-# PKQ_SERVER_NAME=arrhenius
-# PKQ_SERVER_NAME=berzeliusampere
+PKQ_SERVER_NAME=arrhenius
+PKQ_SERVER_NAME=berzeliusampere
 # PKQ_SERVER_NAME=greatrawr
 PKQ_GPU_NUM=4
 PKQ_NODES_NUM=1
@@ -108,4 +108,14 @@ CUDA_VISIBLE_DEVICES=1
 # PKQ_RUN_COMMAND="python experiments/feature_drift.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261013_195353/output/toplayers/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13/checkpoint-3930"
 
 
-PKQ_RUN_COMMAND="torchrun --nproc_per_node=4 experiments/run_anchor_finetune.py --config train_configs/anchor_sweep/MetaLlama3.1-mntp-anchor0.1.json --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
+# PKQ_RUN_COMMAND="torchrun --nproc_per_node=4 experiments/run_anchor_finetune.py --config train_configs/anchor_sweep/MetaLlama3.1-mntp-anchor0.1.json --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
+
+
+# PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261015_171125/output/anchor/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13-anchor0.1/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS"
+
+# PKQ_RUN_COMMAND="python experiments/feature_lexical.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261015_171125/output/anchor/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13-anchor0.1/checkpoint-3930"
+
+PKQ_RUN_COMMAND="torchrun --nproc_per_node=4 experiments/run_anchor_finetune.py --config train_configs/anchor_sweep/MetaLlama3.1-mntp-anchor3.json --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
+
+
+

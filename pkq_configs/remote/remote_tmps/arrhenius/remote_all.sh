@@ -17,7 +17,7 @@ export PKQ_INTERACTIVE=
 export MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
 export CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 export CUDA_VISIBLE_DEVICES=1
-export PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/run_layerwise_finetune.py     --config train_configs/layerwise/MetaLlama3.1-mntp-layerwise.json     --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
+export PKQ_RUN_COMMAND="python experiments/feature_lexical.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261015_171125/output/anchor/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13-anchor0.1/checkpoint-3930"
 if [[ -z ${PKQ_MODULES} ]]; then
 export PKQ_MODULES="GPU/Miniforge/26.3.2-2-eb"
 fi
@@ -34,6 +34,11 @@ which python
 python --version
 which pip
 pip install -q huggingface_hub
+if [ -z ${PKQ_CONDAENV} ]; then
+    export PKQ_CONDAENV=${RUN_DIR_HOME}/pkqcondaenv/${RUN_PROJ}
+    export PKQ_WHEELS=${RUN_DIR_HOME}/pkqwheels/${RUN_PROJ}
+fi
+echo "condaenv path ${PKQ_CONDAENV}"
 # hf download Tevatron/msmarco-passage-corpus --repo-type dataset
 #
 # hf download "meta-llama/Meta-Llama-3.1-8B" --exclude "*.pth"
@@ -53,11 +58,6 @@ hf download OpenMOSS-Team/Llama3_1-8B-Base-LXR-32x --include "Llama3_1-8B-Base-L
 module --force purge
 module load ${PKQ_MODULES}
 
-if [ -z ${PKQ_CONDAENV} ]; then
-    export PKQ_CONDAENV=${RUN_DIR_HOME}/pkqcondaenv/${RUN_PROJ}
-    export PKQ_WHEELS=${RUN_DIR_HOME}/pkqwheels/${RUN_PROJ}
-fi
-echo "condaenv path ${PKQ_CONDAENV}"
 if [[ ! -d ${PKQ_CONDAENV}${PKQ_ARCH} ]]; then
     conda create -p ${PKQ_CONDAENV}${PKQ_ARCH} python=${PKQ_PYTHON} pip -y
 fi
@@ -87,4 +87,4 @@ which pip
 #
 
 pip list > pkq_configs/packages.txt
-sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkqlogs/20261010_114129/job-%j.out --error=pkqlogs/20261010_114129/job-%j.out  --gres=gpu:4 --cpus-per-task=32 --mem=320G  -A naiss2026-3-658-gpu --partition=gpu pkq_configs/remote/remote_tmps/arrhenius/slurm.sh
+sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkq_configs/logs_20261015_204639/job-%j.out --error=pkq_configs/logs_20261015_204639/job-%j.out  --gres=gpu:4 --cpus-per-task=32 --mem=320G  -A naiss2026-3-658-gpu --partition=gpu pkq_configs/remote/remote_tmps/arrhenius/slurm.sh

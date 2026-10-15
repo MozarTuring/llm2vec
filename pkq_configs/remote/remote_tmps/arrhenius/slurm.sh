@@ -29,9 +29,11 @@ echo "LD_LIBRARY_PATH, ${LD_LIBRARY_PATH}"
 conda activate ${PKQ_CONDAENV}${PKQ_ARCH}
 
 which python
-python -m  pip list >pkq_configs/packages.txt
+mkdir -p pkq_configs/packages
+mkdir -p pkq_configs/logs_${PKQ_RUN_START_TIME}
+python -m pip list > pkq_configs/packages/${PKQ_SERVER_NAME}.txt
 
-bash ${RUN_DIR_HOME}/project_remote_pkq/common_tools_pikaq/resource_usage.sh >pkqlogs/${PKQ_RUN_START_TIME}/resource_usage.log &
+bash ${RUN_DIR_HOME}/project_remote_pkq/common_tools_pikaq/resource_usage.sh >pkq_configs/logs_${PKQ_RUN_START_TIME}/resource_usage.log &
 
 echo "TORCH_CUDA_ARCH_LIST ${TORCH_CUDA_ARCH_LIST}"
 
@@ -46,17 +48,21 @@ fi
 # that shadow the real driver and break GPU init.
 _lib_path_no_stubs=$(echo "${LIBRARY_PATH:-}" | tr ':' '\n' | grep -v '/stubs/' | paste -sd ':')
 export LD_LIBRARY_PATH=${_lib_path_no_stubs:+${_lib_path_no_stubs}:}${LD_LIBRARY_PATH:-}
+echo "PWD, ${PWD}"
 echo "PKQ_RUN_COMMAND, ${PKQ_RUN_COMMAND}"
 srun --ntasks=1 ${PKQ_RUN_COMMAND} &
 
 wait $!
 
+exit_code=$?
 remote_dir=${PWD}
 echo "slurm remote dir, ${remote_dir}"
 
-# ts=$(cat "${RUN_DIR_HOME}/project_remote_pkq/last_remote_ts/${PKQ_RUN_START_TIME}.txt")
-# echo "slurm ts, ${ts}, ${PKQ_RUN_START_TIME}"
+if [ $exit_code -eq 0 ]; then
+    echo "Command succeeded."
+    mkdir -p "${RUN_DIR_HOME}/project_remote_pkq/remote_data/${RUN_PROJ_NAME}/backup/${PKQ_RUN_START_TIME}" && rsync -a ./ "${RUN_DIR_HOME}/project_remote_pkq/remote_data/${RUN_PROJ_NAME}/backup/${PKQ_RUN_START_TIME}/" 2>&1 && touch ./pkq_run_succeed.flag
 
-mkdir -p "${RUN_DIR_HOME}/project_remote_pkq/remote_data/${RUN_PROJ_NAME}/backup/${PKQ_SERVER_NAME}/${PKQ_RUN_START_TIME}" && rsync -a ./  "${RUN_DIR_HOME}/project_remote_pkq/remote_data/${RUN_PROJ_NAME}/backup/${PKQ_SERVER_NAME}/${PKQ_RUN_START_TIME}/" 2>&1
+else
+    echo "Command failed with exit code $exit_code."
+fi
 
-# rm ${RUN_DIR_HOME}/project_remote_pkq/last_remote_ts/${PKQ_RUN_START_TIME}.txt
