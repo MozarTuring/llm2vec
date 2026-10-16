@@ -122,9 +122,29 @@ CUDA_VISIBLE_DEVICES=1
 
 # PKQ_RUN_COMMAND="python experiments/feature_lexical.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261015_210817/output/anchor/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13-anchor3/checkpoint-3930"
 
-PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261013_195353/output/toplayers/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS"
+# PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261013_195353/output/toplayers/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS"
 
 
-PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261015_171125/output/anchor/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13-anchor0.1/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS"
+# PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261015_171125/output/anchor/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13-anchor0.1/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS"
 
+# PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261014_203212/output/anchor/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13-anchor1/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS"
+#
+# PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261015_210817/output/anchor/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13-anchor3/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS"
+#
+# PKQ_RUN_COMMAND="python experiments/mteb_eval_featgate.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261013_155049/output/featgate/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS"
+#
+# PKQ_RUN_COMMAND="python experiments/mteb_eval_featgate.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261013_155049/output/featgate/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS --no_gate"
+
+# PKQ_RUN_COMMAND="python experiments/feature_lexical_basew.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261015_210817/output/anchor/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13-anchor3/checkpoint-3930"
+
+# PKQ_RUN_COMMAND="python experiments/feature_lexical_basew.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261014_203212/output/anchor/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13-anchor1/checkpoint-3930"
+#
+# PKQ_RUN_COMMAND="python experiments/feature_lexical_basew.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261015_171125/output/anchor/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13-anchor0.1/checkpoint-3930"
+#
+# PKQ_RUN_COMMAND="python experiments/feature_lexical_basew.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261013_195353/output/toplayers/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13/checkpoint-3930"
+#
+# PKQ_RUN_COMMAND="python experiments/feature_lexical_basew.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261010_125818/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930"
+
+
+PKQ_RUN_COMMAND="python experiments/feature_lexical_featgate_basew.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261010_125818/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930 --featgate_path ${PKQ_DATA_DIR}/backup/20261013_155049/output/featgate/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930/featgate.pt"
 
