@@ -70,7 +70,7 @@ if __name__ == "__main__":
     parser.add_argument("--lora_layers", type=int)
     parser.add_argument("--task_name", type=str, nargs="+",
                         default=["SciFact", "NFCorpus", "ArguAna", "SCIDOCS"])
-    parser.add_argument("--output_dir", type=str)
+    parser.add_argument("--output_dir", type=str, default="results")
     parser.add_argument("--query_top_k", type=int, default=40, help="0 disables pruning.")
     parser.add_argument("--doc_top_k", type=int, default=400, help="0 disables pruning.")
     parser.add_argument("--max_length", type=int, default=1024)

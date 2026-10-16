@@ -17,7 +17,7 @@ export PKQ_INTERACTIVE=
 export MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
 export CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 export CUDA_VISIBLE_DEVICES=1
-export PKQ_RUN_COMMAND="python experiments/feature_lexical.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261015_171125/output/anchor/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13-anchor0.1/checkpoint-3930"
+export PKQ_RUN_COMMAND="python experiments/feature_lexical.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261015_210817/output/anchor/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13-anchor3/checkpoint-3930"
 if [[ -z ${PKQ_MODULES} ]]; then
 export PKQ_MODULES="Miniforge3 buildenv-gcccuda/12.4.1-gcc13.3.0"
 fi
@@ -86,4 +86,4 @@ which pip
 #
 
 pip list > pkq_configs/packages.txt
-sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkq_configs/logs_20261015_204727/job-%j.out --error=pkq_configs/logs_20261015_204727/job-%j.out --nodelist=node[061-064,065,066-093] --gpus=4 --cpus-per-task=32 --mem=96G  -A berzelius-2026-243 --partition=berzelius pkq_configs/remote/remote_tmps/berzeliusampere/slurm.sh
+sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkq_configs/logs_20261016_094231/job-%j.out --error=pkq_configs/logs_20261016_094231/job-%j.out --nodelist=node[061-064,065,066-093] --gpus=4 --cpus-per-task=32 --mem=96G  -A berzelius-2026-243 --partition=berzelius pkq_configs/remote/remote_tmps/berzeliusampere/slurm.sh
