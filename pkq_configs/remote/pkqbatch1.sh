@@ -1,7 +1,7 @@
 PKQ_PYTHON="3.10"
 PKQ_SERVER_NAME=berzeliushopper
-PKQ_SERVER_NAME=arrhenius
-PKQ_SERVER_NAME=berzeliusampere
+# PKQ_SERVER_NAME=arrhenius
+# PKQ_SERVER_NAME=berzeliusampere
 # PKQ_SERVER_NAME=greatrawr
 PKQ_GPU_NUM=4
 PKQ_NODES_NUM=1
@@ -154,4 +154,6 @@ CUDA_VISIBLE_DEVICES=1
 # PKQ_RUN_COMMAND="python experiments/feature_precision.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261014_203212/output/anchor/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13-anchor1/checkpoint-3930"
 # PKQ_RUN_COMMAND="python experiments/feature_precision.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261015_210817/output/anchor/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13-anchor3/checkpoint-3930"
 
-PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/feature_scale_base.py"
+# PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/feature_scale_base.py"
+
+PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/feature_scale_base_fvu.py"
