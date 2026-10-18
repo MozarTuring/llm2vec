@@ -148,10 +148,10 @@ CUDA_VISIBLE_DEVICES=1
 
 # PKQ_RUN_COMMAND="python experiments/feature_lexical_featgate_basew.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261010_125818/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930 --featgate_path ${PKQ_DATA_DIR}/backup/20261013_155049/output/featgate/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930/featgate.pt"
 
-PKQ_RUN_COMMAND="python experiments/feature_precision.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261010_125818/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930 --featgate_path ${PKQ_DATA_DIR}/backup/20261013_155049/output/featgate/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930/featgate.pt"
+# PKQ_RUN_COMMAND="python experiments/feature_precision.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261010_125818/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930 --featgate_path ${PKQ_DATA_DIR}/backup/20261013_155049/output/featgate/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930/featgate.pt"
 # PKQ_RUN_COMMAND="python experiments/feature_precision.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261013_195353/output/toplayers/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13/checkpoint-3930"
 # PKQ_RUN_COMMAND="python experiments/feature_precision.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261015_171125/output/anchor/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13-anchor0.1/checkpoint-3930"
 # PKQ_RUN_COMMAND="python experiments/feature_precision.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261014_203212/output/anchor/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13-anchor1/checkpoint-3930"
 # PKQ_RUN_COMMAND="python experiments/feature_precision.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261015_210817/output/anchor/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13-anchor3/checkpoint-3930"
 
-
+PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/feature_scale_base.py"
