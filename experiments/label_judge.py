@@ -2,7 +2,7 @@
 
 Reads label_snippets.py's output and Neuronpedia's labels (explanations export of
 llama3.1-8b/16-llamascope-res-131k, written by gpt-4o-mini from base's activations). For every model,
-feature with a label, and snippet, an LLM judge (default Qwen2.5-72B-Instruct) is asked whether the
+feature with a label, and snippet, an LLM judge (default Qwen2.5-32B-Instruct) is asked whether the
 label describes the marked token; the answer is Yes if P(Yes) > P(No) for the first answer token.
 
 Per model m and feature i, with the positive (feature in the top-400 retrieval vector) and negative
@@ -17,10 +17,11 @@ Aggregates per model: BA and BA0 averaged over the model's own top features weig
 retrieval mass, and over base's top features weighted by base's mass (same features and weights for
 every model).
 
-One process: the judge is spread over all visible GPUs (device_map="auto"); a 72B model does not
-fit on one GPU, so this does not use torchrun.
+One process per GPU: torchrun --nproc_per_node=N gives each process a copy of the judge and every
+N-th question; answers are gathered, rank 0 scores and writes
+results_label_judge/label_judge_<name>.json. Plain python runs on one GPU.
 
-    python experiments/label_judge.py --snippets ${PKQ_DATA_DIR}/backup/<ts>/results_label_snippets/label_snippets_<name>.json
+    torchrun --nproc_per_node=N experiments/label_judge.py --snippets ${PKQ_DATA_DIR}/backup/<ts>/results_label_snippets/label_snippets_<name>.json
 """
 
 import argparse
@@ -33,7 +34,10 @@ import traceback
 
 import numpy as np
 import torch
+import torch.distributed as dist
 from transformers import AutoModelForCausalLM, AutoTokenizer
+
+from feature_scale_base import setup
 
 PROMPT = """A feature of a language model is described by this explanation:
 "{label}"
@@ -60,19 +64,18 @@ def load_labels(labels_dir):
 
 
 @torch.no_grad()
-def p_yes(pairs, tokenizer, judge, yes_id, no_id, batch_size):
+def p_yes(pairs, tokenizer, judge, yes_id, no_id, batch_size, device, rank):
     """P(Yes) / (P(Yes) + P(No)) for each (label, snippet)."""
     prompts = [tokenizer.apply_chat_template(
         [{"role": "user", "content": PROMPT.format(label=l, snippet=s)}],
         tokenize=False, add_generation_prompt=True) for l, s in pairs]
-    device = judge.get_input_embeddings().weight.device
     out = []
     for i in range(0, len(prompts), batch_size):
         batch = tokenizer(prompts[i:i + batch_size], return_tensors="pt", padding=True).to(device)
         logits = judge(**batch).logits[:, -1, [yes_id, no_id]].float()
         out += torch.softmax(logits, dim=-1)[:, 0].tolist()
-        if (i // batch_size) % 50 == 0:
-            print(f"  judged {i + len(batch['input_ids'])}/{len(prompts)}", flush=True)
+        if (i // batch_size) % 50 == 0 and rank == 0:
+            print(f"  rank 0: judged {i + len(batch['input_ids'])}/{len(prompts)}", flush=True)
     return out
 
 
@@ -87,13 +90,14 @@ if __name__ == "__main__":
     parser.add_argument("--labels_dir", type=str,
                         default=os.path.join(os.environ.get("PKQ_DATA_DIR", "."),
                                              "neuronpedia/16-llamascope-res-131k/explanations"))
-    parser.add_argument("--judge", type=str, default="Qwen/Qwen2.5-72B-Instruct")
+    parser.add_argument("--judge", type=str, default="Qwen/Qwen2.5-32B-Instruct")
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--output_dir", type=str, default="results_label_judge")
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args()
 
     try:
+        rank, world, device = setup()
         with open(args.snippets) as f:
             data = json.load(f)
         labels, counts = load_labels(args.labels_dir)
@@ -101,7 +105,7 @@ if __name__ == "__main__":
         feats = [f for f in data["features"] if f in labels]
         print(f"{len(feats)}/{len(data['features'])} selected features have a label")
         rng = np.random.default_rng(args.seed)
-        while True:                                    # derangement: no feature keeps its own label
+        while True:
             perm = rng.permutation(len(feats))
             if not (perm == np.arange(len(feats))).any():
                 break
@@ -109,12 +113,10 @@ if __name__ == "__main__":
 
         tokenizer = AutoTokenizer.from_pretrained(args.judge)
         tokenizer.padding_side = "left"
-        judge = AutoModelForCausalLM.from_pretrained(args.judge, torch_dtype=torch.bfloat16,
-                                                     device_map="auto").eval()
+        judge = AutoModelForCausalLM.from_pretrained(args.judge, torch_dtype=torch.bfloat16).to(device).eval()
         yes_id = tokenizer.encode("Yes", add_special_tokens=False)[0]
         no_id = tokenizer.encode("No", add_special_tokens=False)[0]
 
-        # all (model, feature, kind, label type) questions in one list
         keys, pairs = [], []
         for m, rows in data["models"].items():
             for f in feats:
@@ -124,8 +126,20 @@ if __name__ == "__main__":
                         for lab, text in (("label", labels[f]), ("other", other[f])):
                             keys.append((m, f, kind, lab))
                             pairs.append((text, s["text"]))
-        print(f"{len(pairs)} questions")
-        probs = p_yes(pairs, tokenizer, judge, yes_id, no_id, args.batch_size)
+        if rank == 0:
+            print(f"{len(pairs)} questions, {world} process(es)")
+        local = p_yes(pairs[rank::world], tokenizer, judge, yes_id, no_id, args.batch_size, device, rank)
+        if dist.is_initialized():
+            gathered = [None] * world
+            dist.all_gather_object(gathered, local)
+            dist.destroy_process_group()
+        else:
+            gathered = [local]
+        if rank != 0:
+            sys.exit(0)
+        probs = [None] * len(pairs)
+        for r, part in enumerate(gathered):
+            probs[r::world] = part
 
         per = {}
         for (m, f, kind, lab), p in zip(keys, probs):
