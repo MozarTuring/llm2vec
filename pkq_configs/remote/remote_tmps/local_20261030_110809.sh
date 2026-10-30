@@ -1,6 +1,6 @@
 export PKQ_PYTHON="3.10"
 export PKQ_SERVER_NAME=berzeliushopper
-export PKQ_GPU_NUM=4
+export PKQ_GPU_NUM=1
 export PKQ_NODES_NUM=1
 export PKQ_RUN_TIME="1-00:00:00"
 export PKQ_SLURM_FILE=slurm.sh
@@ -10,4 +10,4 @@ export PKQ_INTERACTIVE=
 export MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
 export CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 export CUDA_VISIBLE_DEVICES=1
-export PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/label_judge.py --snippets ${PKQ_DATA_DIR}/backup/20261027_152412/results_label_snippets/label_snippets_splare.json"
+export PKQ_RUN_COMMAND="python experiments/fusion_search.py --dump_dir ${PKQ_DATA_DIR}/backup/20261011_113330/sparse_dumps ${PKQ_DATA_DIR}/backup/20261009_105202/sparse_dumps --layers 16 26 --output_dir results_fusion_search"

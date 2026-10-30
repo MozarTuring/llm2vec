@@ -36,9 +36,8 @@ set -euo pipefail
 
 # hf download OpenMOSS-Team/Llama3_1-8B-Base-LXR-32x --include "Llama3_1-8B-Base-L16R-32x/*"
 
-# Neuronpedia labels (explanations) of the Llama Scope L16R-32x SAE (public S3 export, not on HF)
 # NP_URL=https://neuronpedia-datasets.s3.us-east-1.amazonaws.com/v1/llama3.1-8b/16-llamascope-res-131k
-# NP_DIR=${PKQ_DATA_DIR}/neuronpedia/16-llamascope-res-131k
+# NP_DIR=./neuronpedia/16-llamascope-res-131k
 # mkdir -p ${NP_DIR}/explanations
 # curl -fsS -o ${NP_DIR}/source.jsonl ${NP_URL}/source.jsonl
 # i=0
@@ -51,6 +50,6 @@ set -euo pipefail
 # done
 # echo "downloaded ${i} explanation batches to ${NP_DIR}/explanations"
 
-# judge LLM for the label check
-hf download Qwen/Qwen2.5-72B-Instruct
+# hf download Qwen/Qwen2.5-72B-Instruct
+hf download Qwen/Qwen2.5-32B-Instruct
 

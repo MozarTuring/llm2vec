@@ -160,4 +160,15 @@ CUDA_VISIBLE_DEVICES=1
 
 # PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/label_snippets.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261010_125818/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930 --name splare"
 
-PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/label_judge.py --snippets ${PKQ_DATA_DIR}/backup/20261027_152412/results_label_snippets/label_snippets_splare.json"
+# PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/label_judge.py --snippets ${PKQ_DATA_DIR}/backup/20261027_152412/results_label_snippets/label_snippets_splare.json"
+
+# PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/label_snippets.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261013_195353/output/toplayers/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13/checkpoint-3930 --name top-layers"
+
+# PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/label_snippets.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261014_203212/output/anchor/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13-anchor1/checkpoint-3930 --name anchor"
+
+# PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/label_judge.py --snippets ${PKQ_DATA_DIR}/backup/20261028_110410/results_label_snippets/label_snippets_top-layers.json"
+
+# PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/label_judge.py --snippets ${PKQ_DATA_DIR}/backup/20261029_151719/results_label_snippets/label_snippets_anchor.json"
+
+PKQ_GPU_NUM=1
+PKQ_RUN_COMMAND="python experiments/fusion_search.py --dump_dir ${PKQ_DATA_DIR}/backup/20261011_113330/sparse_dumps ${PKQ_DATA_DIR}/backup/20261009_105202/sparse_dumps --layers 16 26 --output_dir results_fusion_search"
