@@ -7,7 +7,7 @@ export RUN_PROJ=
 cd ${RUN_DIR_HOME}/project_remote_pkq/${RUN_PROJ}
 export PKQ_PYTHON="3.10"
 export PKQ_SERVER_NAME=berzeliushopper
-export PKQ_GPU_NUM=4
+export PKQ_GPU_NUM=0
 export PKQ_NODES_NUM=1
 export PKQ_RUN_TIME="1-00:00:00"
 export PKQ_SLURM_FILE=slurm.sh
@@ -17,7 +17,7 @@ export PKQ_INTERACTIVE=
 export MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
 export CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 export CUDA_VISIBLE_DEVICES=1
-export PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/label_judge.py --snippets ${PKQ_DATA_DIR}/backup/20261029_151719/results_label_snippets/label_snippets_anchor.json"
+export PKQ_RUN_COMMAND="python experiments/fusion_search.py --dump_dir ${PKQ_DATA_DIR}/backup/20261011_113330/sparse_dumps ${PKQ_DATA_DIR}/backup/20261009_105202/sparse_dumps --layers 16 26 --output_dir results_fusion_search"
 if [[ -z ${PKQ_MODULES} ]]; then
 export PKQ_MODULES="Miniforge3"
 fi
@@ -104,27 +104,5 @@ which pip
 #
 #
 
-pip list > pkq_configs/remote/remote_tmps/berzeliusampere/packages.txt && exit
-# pip install -e .
-# pip install torch --force-reinstall --index-url https://download.pytorch.org/whl/cu128
-# pip install ninja
-# pip install datasets==3.6.0
-# pip install seqeval
-# pip install jupyterlab
-# pip install sentence_transformers
-# pip install sentencepiece
-# pip install protobuf
-#
-# pip install peft==0.12.0
-#
-# pip install mteb
-# pip install ir_datasets
-# pip install -q huggingface_hub
-# pip install ijson
-#
-# pip install --force-reinstall transformers==4.44.2
-#
-#
-
 pip list > pkq_configs/remote/remote_tmps/berzeliushopper/packages.txt && exit
-sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkq_configs/logs_20261030_024425/job-%j.out --error=pkq_configs/logs_20261030_024425/job-%j.out  --gpus=4 --cpus-per-task=32 --mem=96G  -A berzelius-2026-243 --partition=berzelius-hopper pkq_configs/remote/remote_tmps/berzeliushopper/slurm.sh
+sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkq_configs/logs_20261030_112619/job-%j.out --error=pkq_configs/logs_20261030_112619/job-%j.out  --gpus=0 --cpus-per-task=32 --mem=128G  -A berzelius-2026-243 --partition=berzelius-hopper-cpu pkq_configs/remote/remote_tmps/berzeliushopper/slurm.sh

@@ -170,5 +170,7 @@ CUDA_VISIBLE_DEVICES=1
 
 # PKQ_RUN_COMMAND="torchrun --nproc_per_node=${PKQ_GPU_NUM} experiments/label_judge.py --snippets ${PKQ_DATA_DIR}/backup/20261029_151719/results_label_snippets/label_snippets_anchor.json"
 
-PKQ_GPU_NUM=1
-PKQ_RUN_COMMAND="python experiments/fusion_search.py --dump_dir ${PKQ_DATA_DIR}/backup/20261011_113330/sparse_dumps ${PKQ_DATA_DIR}/backup/20261009_105202/sparse_dumps --layers 16 26 --output_dir results_fusion_search"
+# PKQ_GPU_NUM=0
+# PKQ_RUN_COMMAND="python experiments/fusion_search.py --dump_dir ${PKQ_DATA_DIR}/backup/20261011_113330/sparse_dumps ${PKQ_DATA_DIR}/backup/20261009_105202/sparse_dumps --layers 16 26 --output_dir results_fusion_search"
+
+PKQ_RUN_COMMAND="torchrun --nproc_per_node=4 experiments/run_trainenc_finetune.py --config train_configs/trainenc/MetaLlama3.1-mntp-trainenc.json --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
