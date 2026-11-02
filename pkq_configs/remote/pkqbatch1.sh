@@ -173,4 +173,8 @@ CUDA_VISIBLE_DEVICES=1
 # PKQ_GPU_NUM=0
 # PKQ_RUN_COMMAND="python experiments/fusion_search.py --dump_dir ${PKQ_DATA_DIR}/backup/20261011_113330/sparse_dumps ${PKQ_DATA_DIR}/backup/20261009_105202/sparse_dumps --layers 16 26 --output_dir results_fusion_search"
 
-PKQ_RUN_COMMAND="torchrun --nproc_per_node=4 experiments/run_trainenc_finetune.py --config train_configs/trainenc/MetaLlama3.1-mntp-trainenc.json --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
+# PKQ_RUN_COMMAND="torchrun --nproc_per_node=4 experiments/run_trainenc_finetune.py --config train_configs/trainenc/MetaLlama3.1-mntp-trainenc.json --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
+
+# PKQ_RUN_COMMAND="python experiments/mteb_eval_trainenc.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261101_123957/output/trainenc/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13-saelr1e-05/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS"
+
+PKQ_RUN_COMMAND="torchrun --nproc_per_node=4 experiments/run_trainenc_finetune.py --config train_configs/trainenc_sweep/MetaLlama3.1-mntp-trainenc-saelr1e-4.json --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"

@@ -7,7 +7,7 @@ export RUN_PROJ=
 cd ${RUN_DIR_HOME}/project_remote_pkq/${RUN_PROJ}
 export PKQ_PYTHON="3.10"
 export PKQ_SERVER_NAME=arrhenius
-export PKQ_GPU_NUM=1
+export PKQ_GPU_NUM=4
 export PKQ_NODES_NUM=1
 export PKQ_RUN_TIME="1-00:00:00"
 export PKQ_SLURM_FILE=slurm.sh
@@ -17,7 +17,7 @@ export PKQ_INTERACTIVE=
 export MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
 export CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 export CUDA_VISIBLE_DEVICES=1
-export PKQ_RUN_COMMAND="python experiments/fusion_search.py --dump_dir ${PKQ_DATA_DIR}/backup/20261011_113330/sparse_dumps ${PKQ_DATA_DIR}/backup/20261009_105202/sparse_dumps --layers 16 26 --output_dir results_fusion_search"
+export PKQ_RUN_COMMAND="torchrun --nproc_per_node=4 experiments/run_trainenc_finetune.py --config train_configs/trainenc/MetaLlama3.1-mntp-trainenc.json --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
 if [[ -z ${PKQ_MODULES} ]]; then
 export PKQ_MODULES="GPU/Miniforge/26.3.2-2-eb"
 fi
@@ -106,4 +106,4 @@ which pip
 #
 
 pip list > pkq_configs/remote/remote_tmps/arrhenius/packages.txt && exit
-sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkq_configs/logs_20261030_110816/job-%j.out --error=pkq_configs/logs_20261030_110816/job-%j.out  --gres=gpu:1 --cpus-per-task=8 --mem=80G  -A naiss2026-3-658-gpu --partition=gpu pkq_configs/remote/remote_tmps/arrhenius/slurm.sh
+sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkq_configs/logs_20261101_123955/job-%j.out --error=pkq_configs/logs_20261101_123955/job-%j.out  --gres=gpu:4 --cpus-per-task=32 --mem=320G  -A naiss2026-3-658-gpu --partition=gpu pkq_configs/remote/remote_tmps/arrhenius/slurm.sh
