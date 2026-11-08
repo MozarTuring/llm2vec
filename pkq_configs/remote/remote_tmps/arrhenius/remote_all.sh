@@ -17,7 +17,7 @@ export PKQ_INTERACTIVE=
 export MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
 export CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 export CUDA_VISIBLE_DEVICES=1
-export PKQ_RUN_COMMAND="python experiments/mteb_eval_trainenc.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261106_133218/output/trainenc/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13-saelr0.0001/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS"
+export PKQ_RUN_COMMAND="python experiments/mteb_eval_multilayer_perlayer.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261012_093224/output/multilayer/Meta-Llama-3.1-8B-msmarco-mntp-L16+26/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS"
 if [[ -z ${PKQ_MODULES} ]]; then
 export PKQ_MODULES="GPU/Miniforge/26.9.4-1-eb"
 fi
@@ -106,4 +106,4 @@ which pip
 #
 
 pip list > pkq_configs/remote/remote_tmps/arrhenius/packages.txt && exit
-sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkq_configs/logs_20261108_123044/job-%j.out --error=pkq_configs/logs_20261108_123044/job-%j.out  --gres=gpu:4 --cpus-per-task=32 --mem=320G  -A naiss2026-3-658-gpu --partition=gpu pkq_configs/remote/remote_tmps/arrhenius/slurm.sh
+sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkq_configs/logs_20261108_132746/job-%j.out --error=pkq_configs/logs_20261108_132746/job-%j.out  --gres=gpu:4 --cpus-per-task=32 --mem=320G  -A naiss2026-3-658-gpu --partition=gpu pkq_configs/remote/remote_tmps/arrhenius/slurm.sh
