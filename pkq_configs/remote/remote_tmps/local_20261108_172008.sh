@@ -10,4 +10,4 @@ export PKQ_INTERACTIVE=
 export MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
 export CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 export CUDA_VISIBLE_DEVICES=1
-export PKQ_RUN_COMMAND="python experiments/mteb_eval_multilayer.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261012_093224/output/multilayer/Meta-Llama-3.1-8B-msmarco-mntp-L16+26/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS"
+export PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261008_152419/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L26/checkpoint-3930 --lora_layers 26 --task_name SciFact NFCorpus ArguAna SCIDOCS --query_top_k 80 --doc_top_k 800"

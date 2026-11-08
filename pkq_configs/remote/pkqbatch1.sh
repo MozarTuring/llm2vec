@@ -185,4 +185,11 @@ CUDA_VISIBLE_DEVICES=1
 
 # PKQ_RUN_COMMAND="torchrun --nproc_per_node=4 experiments/run_router_finetune.py --config train_configs/router/MetaLlama3.1-mntp-router-L16_26.json --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
 
-PKQ_RUN_COMMAND="python experiments/mteb_eval_multilayer.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261012_093224/output/multilayer/Meta-Llama-3.1-8B-msmarco-mntp-L16+26/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS"
+# PKQ_RUN_COMMAND="python experiments/mteb_eval_multilayer.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261012_093224/output/multilayer/Meta-Llama-3.1-8B-msmarco-mntp-L16+26/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS"
+
+# PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261010_125818/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L16/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS --query_top_k 80 --doc_top_k 800"
+
+PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261008_152419/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L26/checkpoint-3930 --lora_layers 26 --task_name SciFact NFCorpus ArguAna SCIDOCS --query_top_k 80 --doc_top_k 800"
+
+# PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261013_195353/output/toplayers/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS --query_top_k 80 --doc_top_k 800"
+
