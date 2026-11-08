@@ -1,5 +1,5 @@
 if [[ -z ${PKQ_MODULES} ]]; then
-export PKQ_MODULES="GPU/Miniforge/26.3.2-2-eb"
+export PKQ_MODULES="GPU/Miniforge/26.9.4-1-eb"
 fi
 export PKQ_LOGIN_MODULES="Miniforge/26.3.2-2-eb"
 export PKQ_ARCH="aarch64"

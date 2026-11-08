@@ -17,7 +17,7 @@ export PKQ_INTERACTIVE=
 export MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
 export CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 export CUDA_VISIBLE_DEVICES=1
-export PKQ_RUN_COMMAND="python experiments/mteb_eval_trainenc.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261101_123957/output/trainenc/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13-saelr1e-05/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS"
+export PKQ_RUN_COMMAND="python experiments/mteb_eval_trainenc.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261106_133218/output/trainenc/Meta-Llama-3.1-8B-msmarco-mntp-L16-from13-saelr0.0001/checkpoint-3930 --task_name SciFact NFCorpus ArguAna SCIDOCS"
 if [[ -z ${PKQ_MODULES} ]]; then
 export PKQ_MODULES="Miniforge3"
 fi
@@ -104,5 +104,27 @@ which pip
 #
 #
 
+pip list > pkq_configs/remote/remote_tmps/berzeliusampere/packages.txt && exit
+# pip install -e .
+# pip install torch --force-reinstall --index-url https://download.pytorch.org/whl/cu128
+# pip install ninja
+# pip install datasets==3.6.0
+# pip install seqeval
+# pip install jupyterlab
+# pip install sentence_transformers
+# pip install sentencepiece
+# pip install protobuf
+#
+# pip install peft==0.12.0
+#
+# pip install mteb
+# pip install ir_datasets
+# pip install -q huggingface_hub
+# pip install ijson
+#
+# pip install --force-reinstall transformers==4.44.2
+#
+#
+
 pip list > pkq_configs/remote/remote_tmps/berzeliushopper/packages.txt && exit
-sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkq_configs/logs_20261101_202457/job-%j.out --error=pkq_configs/logs_20261101_202457/job-%j.out  --gpus=4 --cpus-per-task=32 --mem=96G  -A berzelius-2026-243 --partition=berzelius-hopper pkq_configs/remote/remote_tmps/berzeliushopper/slurm.sh
+sbatch --signal=B:USR1@120 --time=1-00:00:00 --nodes=1 --output=pkq_configs/logs_20261108_123040/job-%j.out --error=pkq_configs/logs_20261108_123040/job-%j.out  --gpus=4 --cpus-per-task=32 --mem=96G  -A berzelius-2026-243 --partition=berzelius-hopper pkq_configs/remote/remote_tmps/berzeliushopper/slurm.sh
