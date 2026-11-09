@@ -10,4 +10,4 @@ export PKQ_INTERACTIVE=
 export MEM_PER_TASK="$((80 * PKQ_GPU_NUM))G"
 export CPUS_PER_TASK=$((8 * PKQ_GPU_NUM))
 export CUDA_VISIBLE_DEVICES=1
-export PKQ_RUN_COMMAND="python experiments/mteb_eval_layerwise.py --trained_checkpoint_path ${PKQ_DATA_DIR}/backup/20261008_152419/output/layerwise/Meta-Llama-3.1-8B-msmarco-mntp-L26/checkpoint-3930 --lora_layers 26 --task_name SciFact NFCorpus ArguAna SCIDOCS --query_top_k 80 --doc_top_k 800"
+export PKQ_RUN_COMMAND="torchrun --nproc_per_node=4 experiments/run_qrouter_finetune.py --config train_configs/qrouter/MetaLlama3.1-mntp-qrouter-L16_26.json --hard_negatives_file ${PKQ_DATA_DIR}/reranker_parts/"
